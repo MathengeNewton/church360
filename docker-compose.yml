@@ -1,0 +1,64 @@
+# version: '3.8'
+
+services:
+  # 1. The Database
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: church
+      POSTGRES_PASSWORD: church_pass
+      POSTGRES_DB: church360
+    ports:
+      - "5455:5432" 
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend
+    depends_on:
+      - db
+    restart: always
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USER: church
+      DATABASE_PASSWORD: church_pass
+      DATABASE_NAME: church360
+    ports:
+      - "4000:3000"
+    command: npm run start:prod
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    container_name: frontend-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+  proxy:
+    build: ./proxy
+    container_name: nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80" 
+      - "443:443" 
+    networks:
+      - app-network
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  db_data: {}
+
+networks:
+  app-network:
+    driver: bridge
+

@@ -1,0 +1,69 @@
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, UsePipes, ValidationPipe, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { AssignRolesDto } from './dto/assign-roles.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../roles/entities/role.entity';
+
+@ApiTags('Users')
+@ApiBearerAuth()
+@Controller('users')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get all users (admin only)' })
+  async findAll() {
+    return this.usersService.findAll();
+  }
+
+  @Get(':id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get user by ID (admin only)' })
+  async findOne(@Param('id') id: number) {
+    return this.usersService.findOne(id);
+  }
+
+  @Post()
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Create a new user (admin only)' })
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async create(@Body() data: CreateUserDto) {
+    return this.usersService.create(data);
+  }
+
+  @Put(':id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update a user (admin only)' })
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async update(@Param('id') id: number, @Body() data: UpdateUserDto) {
+    return this.usersService.update(id, data);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Delete a user (admin only)' })
+  async remove(@Param('id') id: number) {
+    return this.usersService.remove(id);
+  }
+
+  @Post(':id/roles')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Assign roles to user (admin only)' })
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async assignRoles(@Param('id') id: number, @Body() body: AssignRolesDto) {
+    return this.usersService.assignRoles(id, body.roles);
+  }
+
+  @Get('me')
+  @ApiOperation({ summary: 'Get current user profile' })
+  async getProfile(@Request() req) {
+    return this.usersService.findOne(req.user.userId);
+  }
+}
