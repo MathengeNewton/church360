@@ -1,7 +1,7 @@
+// components/DashBoardHeader.jsx   (or wherever you keep it)
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-// import { useSession, signOut } from "next-auth/react";
 import { ChevronRightIcon, UserIcon } from "@heroicons/react/24/solid";
 import {
   ArrowRightStartOnRectangleIcon,
@@ -9,13 +9,33 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 
+// ===================================================
+// SIMULATED USER – SAME AS proxy.js (keep in sync!)
+// ===================================================
+const SIMULATED_USER = {
+  isLoggedIn: true,
+  role: "admin", // ← Change to "user" to see member view
+  name: "Rev. Peter Kamau",
+  email: "peter.kamau@pcea.or.ke",
+  parish: "PCEA St. Andrews Nairobi",
+  avatar: "https://img.icons8.com/ios-filled/50/0d47a1/test-account.png", // same for both for now
+};
+
+// Optional: Different avatar for regular members
+const getAvatar = () => {
+  if (SIMULATED_USER.role === "user") {
+    return "https://img.icons8.com/ios-filled/50/10b981/user-male-circle.png";
+  }
+  return SIMULATED_USER.avatar;
+};
+
 export default function DashBoardHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null); // ref for detecting outside clicks
+  const dropdownRef = useRef(null);
 
-  // Close dropdown on outside click
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -26,42 +46,45 @@ export default function DashBoardHeader() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Breadcrumbs logic (Admin vs User)
   const getBreadcrumbs = () => {
-    const pathSegments = pathname.split("/").filter(Boolean);
-    if (pathSegments.length === 0) return [];
+    const segments = pathname.split("/").filter(Boolean);
+    if (segments.length === 0) return [];
 
     let crumbs = [];
 
-    if (pathSegments[0] === "admin") {
-      crumbs.push({ name: "Admin", href: "#" });
-      for (let i = 1; i < pathSegments.length; i++) {
-        const segment = pathSegments[i];
-        const href = `/${pathSegments.slice(0, i + 1).join("/")}`;
-        const name = segment.charAt(0).toUpperCase() + segment.slice(1);
+    if (segments[0] === "admin" && SIMULATED_USER.role === "admin") {
+      crumbs.push({ name: "Admin Dashboard", href: "/admin/dashboard" });
+      segments.slice(2).forEach((seg, i) => {
+        const href = `/admin/dashboard/${segments.slice(2, i + 3).join("/")}`;
+        const name =
+          seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, " ");
         crumbs.push({ name, href });
-      }
-    } else {
-      crumbs.push({ name: "User", href: "#" });
-      for (let i = 1; i < pathSegments.length; i++) {
-        const segment = pathSegments[i];
-        const href = `${pathSegments.slice(1, i + 1).join("/")}`;
-        const name = segment.charAt(0).toUpperCase() + segment.slice(1);
+      });
+    } else if (segments[0] === "user" && SIMULATED_USER.role === "user") {
+      crumbs.push({ name: "My Dashboard", href: "/user/dashboard" });
+      segments.slice(2).forEach((seg, i) => {
+        const href = `/user/dashboard/${segments.slice(2, i + 3).join("/")}`;
+        const name =
+          seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, " ");
         crumbs.push({ name, href });
-      }
+      });
     }
 
     return crumbs;
   };
 
   const crumbs = getBreadcrumbs();
-  const userName = "Admin";
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    // In real app: clear session
+    // For now: just go to login (or simulate logout by reloading)
     router.push("/auth/login");
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 p-4 shadow-sm flex items-center justify-between">
+    <header className="bg-white border-b border-gray-200 p-4 shadow-sm flex items-center justify-between sticky top-0 z-40">
+      {/* Breadcrumbs */}
       <nav className="flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           {crumbs.map((crumb, index) => (
@@ -72,9 +95,9 @@ export default function DashBoardHeader() {
               <Link
                 href={crumb.href}
                 className={`text-sm font-medium transition-colors ${
-                  pathname === crumb.href
-                    ? "text-gray-900"
-                    : "text-gray-500 hover:text-blue-900"
+                  pathname.startsWith(crumb.href)
+                    ? "text-gray-900 font-semibold"
+                    : "text-gray-500 hover:text-[#0D47A1]"
                 }`}
               >
                 {crumb.name}
@@ -84,46 +107,71 @@ export default function DashBoardHeader() {
         </ol>
       </nav>
 
-      <div className="relative flex items-center space-x-4" ref={dropdownRef}>
-        <div className="relative">
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="cursor-pointer flex items-center gap-2 h-10 pl-2 pr-3 rounded-full bg-white shadow-md border border-gray-200 hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900"
-            aria-label="User Profile"
-          >
-            <img
-              width="32"
-              height="32"
-              src="https://img.icons8.com/ios-filled/50/0d47a1/test-account.png"
-              alt="test-account"
-            />
-            <span className="hidden md:inline text-sm font-medium text-gray-700">
-              {userName}
-            </span>
-            <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-          </button>
+      {/* User Dropdown */}
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          className="flex items-center gap-3 h-11 px-3 rounded-full bg-white shadow-md border border-gray-200 hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-[#0D47A1]"
+        >
+          <img
+            src={getAvatar()}
+            alt="User avatar"
+            className="w-8 h-8 rounded-full object-cover"
+          />
+          <div className="hidden md:block text-left">
+            <p className="text-sm font-semibold text-gray-900">
+              {SIMULATED_USER.name}
+            </p>
+            <p className="text-xs text-gray-500 capitalize">
+              {SIMULATED_USER.role}
+            </p>
+          </div>
+          <ChevronDownIcon
+            className={`w-4 h-4 text-gray-500 transition-transform ${
+              isDropdownOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
 
-          {isDropdownOpen && (
-            <div className="absolute right-0 mt-3 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                <p className="text-sm font-semibold text-gray-900">
-                  {userName}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                  admin@example.com
-                </p>
-              </div>
+        {/* Dropdown Menu */}
+        {isDropdownOpen && (
+          <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+            <div className="px-4 py-3 bg-gradient-to-r from-[#0D47A1]/5 to-blue-50 border-b border-gray-200">
+              <p className="text-sm font-bold text-gray-900">
+                {SIMULATED_USER.name}
+              </p>
+              <p className="text-xs text-gray-600 truncate">
+                {SIMULATED_USER.email}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {SIMULATED_USER.parish}
+              </p>
+            </div>
+
+            <div className="py-2">
+              <Link
+                href={
+                  SIMULATED_USER.role === "admin"
+                    ? "/admin/dashboard/profile"
+                    : "/user/dashboard/profile"
+                }
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                onClick={() => setIsDropdownOpen(false)}
+              >
+                <UserIcon className="w-5 h-5" />
+                My Profile
+              </Link>
 
               <button
                 onClick={handleLogout}
-                className="cursor-pointer w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-900 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
               >
                 <ArrowRightStartOnRectangleIcon className="w-5 h-5" />
                 Logout
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </header>
   );

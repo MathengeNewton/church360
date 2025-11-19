@@ -1,130 +1,305 @@
+// components/LoginForm.jsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   EnvelopeIcon,
   EyeIcon,
   EyeSlashIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 import Link from "next/link";
+
+// HARDCODED USERS — FOR DEVELOPMENT/DEMO ONLY
+const HARDCODED_USERS = [
+  {
+    email: "admin@pcea.or.ke",
+    password: "admin123",
+    role: "admin",
+    name: "Rev. Peter Kamau",
+    redirect: "/admin/dashboard",
+  },
+  {
+    email: "member@pcea.or.ke",
+    password: "user123",
+    role: "user",
+    name: "Sister Mary Wanjiku",
+    redirect: "/user/dashboard",
+  },
+];
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({ email: "", password: "" });
+
+  const router = useRouter();
+
+  // Load remembered email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("pcea-remembered-email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
+  // Validate email format
+  const validateEmail = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email.trim());
+  };
+
+  // Validate password (minimum 6 characters for demo)
+  const validatePassword = (password) => {
+    return password.length >= 6;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please fill in all fields");
+
+    // Reset previous errors
+    setErrors({ email: "", password: "" });
+
+    let hasError = false;
+
+    // Client-side validation
+    if (!email.trim()) {
+      setErrors((prev) => ({ ...prev, email: "Email is required" }));
+      hasError = true;
+    } else if (!validateEmail(email)) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "Please enter a valid email address",
+      }));
+      hasError = true;
+    }
+
+    if (!password) {
+      setErrors((prev) => ({ ...prev, password: "Password is required" }));
+      hasError = true;
+    } else if (!validatePassword(password)) {
+      setErrors((prev) => ({
+        ...prev,
+        password: "Password must be at least 6 characters long",
+      }));
+      hasError = true;
+    }
+
+    if (hasError) {
+      toast.error("Please fix the errors above");
       return;
     }
-    toast.info("Logging in...");
-    // Simulate login delay
+
+    setIsLoading(true);
+
+    // Simulate API call
     setTimeout(() => {
-      toast.success("Logged in successfully");
-    }, 1000);
+      const user = HARDCODED_USERS.find(
+        (u) => u.email === email.trim().toLowerCase() && u.password === password
+      );
+
+      if (user) {
+        toast.success(`Welcome back, ${user.name.split(" ")[1]}!`, {
+          icon: <CheckCircleIcon className="h-6 w-6 text-green-600" />,
+        });
+
+        // Save email if "Remember me" is checked
+        if (rememberMe) {
+          localStorage.setItem("pcea-remembered-email", email.trim());
+        } else {
+          localStorage.removeItem("pcea-remembered-email");
+        }
+
+        // Simulate storing user session (for demo)
+        sessionStorage.setItem(
+          "pcea-user",
+          JSON.stringify({ name: user.name, role: user.role })
+        );
+
+        // Redirect after toast
+        setTimeout(() => {
+          router.push(user.redirect);
+        }, 1200);
+      } else {
+        toast.error("Invalid email or password", {
+          icon: <ExclamationCircleIcon className="h-6 w-6 text-red-600" />,
+        });
+        setIsLoading(false);
+      }
+    }, 800);
   };
 
   return (
     <div>
       <form
-        className="max-w-md mx-auto w-full p-4 md:p-6"
+        className="max-w-md mx-auto w-full p-6 bg-white rounded-2xl shadow-xl border border-gray-100"
         onSubmit={handleSubmit}
+        noValidate // Prevents native browser validation (we handle it)
       >
-        <div className="mb-8">
-          <div>
-            <h1 className="text-gray-800 text-xl lg:text-3xl font-semibold">
-              Sign in
-            </h1>
-          </div>
+        <div className="mb-10 text-left">
+          <h1 className="text-xl lg:text-3xl font-bold text-gray-900">
+            Welcome Back
+          </h1>
+          <p className="text-sm lg:text-base text-gray-600 mt-2">
+            Sign in to your PCEA account
+          </p>
         </div>
+
         <div className="space-y-6">
+          {/* Email Field */}
           <div>
-            <label className="text-slate-900 text-sm lg:text-base font-medium mb-2 block">
-              Email
+            <label className="block text-sm lg:text-base font-medium text-gray-700 mb-2">
+              Email Address
             </label>
-            <div className="relative flex items-center">
+            <div className="relative">
               <input
-                name="email"
-                type="text"
-                required
-                className="w-full text-sm lg:text-base text-slate-900 bg-slate-100 focus:bg-transparent pl-4 pr-10 py-3 rounded-md border border-slate-100 focus:border-blue-600 outline-none transition-all"
-                placeholder="Enter email"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className={`w-full pl-11 pr-4 py-3 rounded-lg border ${
+                  errors.email
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                    : "border-gray-300 focus:border-[#0D47A1] focus:ring-[#0D47A1]/20"
+                } outline-none transition-all`}
+                placeholder="admin@pcea.or.ke"
+                disabled={isLoading}
               />
-              <EnvelopeIcon className="w-[18px] h-[18px] absolute right-4 text-[#bbb]" />
+              <EnvelopeIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 pointer-events-none" />
             </div>
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <ExclamationCircleIcon className="h-4 w-4" />
+                {errors.email}
+              </p>
+            )}
           </div>
+
+          {/* Password Field */}
           <div>
-            <label className="text-slate-900 text-sm lg:text-base font-medium mb-2 block">
+            <label className="block text-sm lg:text-base font-medium text-gray-700 mb-2">
               Password
             </label>
-            <div className="relative flex items-center">
+            <div className="relative">
               <input
-                name="password"
                 type={showPassword ? "text" : "password"}
-                required
-                className="w-full text-sm lg:text-base text-slate-900 bg-slate-100 focus:bg-transparent pl-4 pr-10 py-3 rounded-md border border-slate-100 focus:border-blue-600 outline-none transition-all"
-                placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className={`w-full pl-4 pr-12 py-3 rounded-lg border ${
+                  errors.password
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                    : "border-gray-300 focus:border-[#0D47A1] focus:ring-[#0D47A1]/20"
+                } outline-none transition-all`}
+                placeholder="••••••••"
+                disabled={isLoading}
               />
-              {showPassword ? (
-                <EyeSlashIcon
-                  className="w-[18px] h-[18px] absolute right-4 text-[#bbb] cursor-pointer"
-                  onClick={() => setShowPassword(false)}
-                />
-              ) : (
-                <EyeIcon
-                  className="w-[18px] h-[18px] absolute right-4 text-[#bbb] cursor-pointer"
-                  onClick={() => setShowPassword(true)}
-                />
-              )}
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600 transition"
+                tabIndex="-1"
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
             </div>
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <ExclamationCircleIcon className="h-4 w-4" />
+                {errors.password}
+              </p>
+            )}
           </div>
-          <div className="flex flex-wrap items-center gap-4 justify-between">
-            <div className="flex items-center">
+
+          {/* Remember Me & Forgot Password */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
-                id="remember-me"
-                name="remember-me"
                 type="checkbox"
-                className="shrink-0 h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded-md"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 text-[#0D47A1] rounded focus:ring-[#0D47A1]"
+                disabled={isLoading}
               />
-              <label
-                htmlFor="remember-me"
-                className="ml-3 block text-sm lg:text-base text-slate-900"
-              >
+              <span className="text-sm lg:text-base text-gray-700">
                 Remember me
-              </label>
-            </div>
-            <div className="text-sm lg:text-base">
-              <Link
-                href="/auth/forgot-password"
-                className="text-blue-600 font-medium hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
+              </span>
+            </label>
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm lg:text-base text-[#0D47A1] hover:underline font-medium"
+            >
+              Forgot password?
+            </Link>
           </div>
         </div>
-        <div className="mt-12">
+
+        {/* Submit Button */}
+        <div className="mt-8">
           <button
             type="submit"
-            className="w-full shadow-xl py-2 px-4 text-sm lg:text-base tracking-wide font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none cursor-pointer"
+            disabled={isLoading}
+            className={`w-full py-3.5 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 ${
+              isLoading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-[#0D47A1] hover:bg-[#0D47A1]/90 shadow-lg hover:shadow-xl"
+            }`}
           >
-            Sign in
+            {isLoading ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </button>
         </div>
+
+        {/* Dev Helper Box - Remove before production */}
+        <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900">
+          <p className="font-bold mb-2 text-amber-800">🔧 Dev Credentials</p>
+          <div className="space-y-1 font-mono">
+            <p>
+              Admin → <strong>admin@pcea.or.ke</strong> / admin123
+            </p>
+            <p>
+              User → <strong>member@pcea.or.ke</strong> / user123
+            </p>
+          </div>
+        </div>
       </form>
-      <ToastContainer />
+
+      <ToastContainer position="top-right" autoClose={3000} theme="light" />
     </div>
   );
 }
