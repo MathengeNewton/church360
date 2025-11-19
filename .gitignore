@@ -1,0 +1,41 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/fronted/node_modules
+/fronted/.pnp
+/fronted/.pnp.*
+/fronted/.yarn/*
+!/fronted/.yarn/patches
+!/fronted/.yarn/plugins
+!/fronted/.yarn/releases
+!/fronted/.yarn/versions
+
+# testing
+/fronted/coverage
+
+# next.js
+/fronted/.next/
+/fronted/out/
+
+# production
+/fronted/build
+
+# misc
+/fronted/.DS_Store
+/fronted/*.pem
+
+# debug
+/fronted/npm-debug.log*
+/fronted/yarn-debug.log*
+/fronted/yarn-error.log*
+/fronted/.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+/fronted/.env*
+
+# vercel
+/fronted/.vercel
+
+# typescript
+/fronted/*.tsbuildinfo
+/fronted/next-env.d.ts
