@@ -9,13 +9,15 @@ import { JwtModule } from '@nestjs/jwt';
 import { User } from './modules/users/entities/user.entity';
 import { Role } from './modules/roles/entities/role.entity';
 import { Region } from './modules/regions/entities/region.entity';
-import { Family } from './modules/family/entities/family.entity'; // Added import
+import { Family } from './modules/family/entities/family.entity';
 import { SeedService } from './core/seed/seed.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { RegionsModule } from './modules/regions/regions.module';
 import { UsersModule } from './modules/users/users.module';
 import { RolesModule } from './modules/roles/roles.module';
-import { FamilyModule } from './modules/family/families.module'; // Added import
+import { FamilyModule } from './modules/family/families.module';
+import { CampaignsModule } from './modules/campaigns/campaigns.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import AppConfig from './core/config/app.config';
 
 @Module({
@@ -26,8 +28,7 @@ import AppConfig from './core/config/app.config';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        // Ensure a valid TypeOrmModuleOptions object is always returned
+      useFactory: (configService: ConfigService) => {
         return configService.get<TypeOrmModuleOptions>('database')!;
       },
       inject: [ConfigService],
@@ -55,6 +56,8 @@ import AppConfig from './core/config/app.config';
     UsersModule,
     RolesModule,
     FamilyModule,
+    CampaignsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedService],

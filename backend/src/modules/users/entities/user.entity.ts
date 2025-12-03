@@ -9,6 +9,7 @@ import {
 import { Role } from '../../roles/entities/role.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { Family } from 'src/modules/family/entities/family.entity';
+import { Payment } from 'src/modules/payments/entities/payments.entity';
 
 @Entity()
 export class User {
@@ -36,5 +37,11 @@ export class User {
   @ApiProperty({ description: 'Family associated with the user' })
   @OneToMany(() => Family, (family) => family.head)
   families: Family[];
+
+  @ApiProperty({
+    description: 'Payments made by the user',
+    type: () => [Payment],
+  })
+  @OneToMany(() => Payment, (payment) => payment.user)
+  payments: Payment[];
 }
-// End of file: src/modules/users/entities/user.entity.ts

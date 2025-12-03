@@ -21,8 +21,8 @@ RUN chmod +x /wait-for-it.sh
 # Build the NestJS app (if using TypeScript)
 RUN npm run build
 
-# Expose the port your app runs on (default: 3000)
-EXPOSE 3000
+# Expose the port your app runs on (default: 3500)
+EXPOSE 3500
 
 # Command to run the app, waiting for DB
 CMD ["/wait-for-it.sh", "db:5432", "--", "npm", "run", "start:prod"]
