@@ -34,34 +34,24 @@ export default function DashboardLayout({ children }) {
   const adminMenu = [
     { name: "Dashboard", href: "/admin/dashboard", icon: HomeIcon },
 
-    // Members
-    { name: "Members", href: "/admin/#", icon: UserIcon },
-    { name: "Families", href: "/admin/#", icon: FolderOpenIcon },
-
-    // Groups & Ministries
-    { name: "Groups", href: "/admin/#", icon: ClipboardDocumentListIcon },
-
-    // Contributions & Finance
+    { name: "Users", href: "/admin/users", icon: UserIcon },
+    { name: "Families", href: "/admin/families", icon: FolderOpenIcon },
+    { name: "Campaigns", href: "/admin/campaigns", icon: BriefcaseIcon },
+    {
+      name: "Regions",
+      href: "/admin/regions",
+      icon: ClipboardDocumentListIcon,
+    },
     {
       name: "Contributions",
-      href: "/admin/#",
+      href: "/admin/contributions",
       icon: CreditCardIcon,
     },
-    {
-      name: "Finance Reports",
-      href: "/admin/finance/#",
-      icon: ChartBarIcon,
-    },
+    { name: "Payments", href: "/admin/payments", icon: ChartBarIcon },
 
     // Events
     { name: "Events", href: "/admin/#", icon: CalendarIcon },
 
-    // Communication
-    {
-      name: "Announcements",
-      href: "/admin/#",
-      icon: ChatBubbleLeftRightIcon,
-    },
     { name: "Messages", href: "/admin/#", icon: EnvelopeIcon },
 
     // Users

@@ -1,4 +1,11 @@
-// AdminDashboard.tsx (or .jsx)
+// app/(dashboard)/admin/dashboard/page.jsx
+// Updated for single parish: PCEA Lang'ata
+// Scaled down numbers, replaced activeParishes with totalRegions
+// Replaced Top 5 Active Parishes with Top 5 Regions by Members
+// Removed parish from recentActivities, updated dates
+// Added Line chart for membership growth
+// Aesthetics remain the same
+
 "use client";
 import { useState, useEffect } from "react";
 import {
@@ -29,12 +36,10 @@ ChartJS.register(
 
 const AdminDashboardPage = () => {
   const [stats, setStats] = useState({
-    totalMembers: 12450,
-    activeParishes: 68,
-    // newMembersThisMonth: 87,
-    upcomingEvents: 12,
-    tithesThisMonth: "KES 4,820,000",
-    // attendanceLastSunday: 8920,
+    totalMembers: 2050,
+    totalRegions: 5,
+    upcomingEvents: 5,
+    tithesThisMonth: "KES 482,000",
   });
 
   // Simulate live updates
@@ -42,15 +47,44 @@ const AdminDashboardPage = () => {
     const timer = setInterval(() => {
       setStats((prev) => ({
         ...prev,
-
-        tithesThisMonth: `KES ${(4.5 + Math.random() * 0.8).toFixed(1)}M`,
+        tithesThisMonth: `KES ${(0.45 + Math.random() * 0.08).toFixed(1)}M`,
       }));
     }, 8000);
     return () => clearInterval(timer);
   }, []);
 
-  // Membership Growth Over Time (Line Chart)
+  // Membership Growth Over Time (Line Chart) - scaled down
   const membershipGrowthData = {
+    labels: [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
+    datasets: [
+      {
+        label: "Total Registered Members",
+        data: [
+          1800, 1850, 1870, 1900, 1930, 1950, 1970, 1990, 2000, 2020, 2040,
+          2050,
+        ],
+        borderColor: "#0D47A1",
+        backgroundColor: "rgba(13, 71, 161, 0.1)",
+        tension: 0.4,
+      },
+    ],
+  };
+
+  // Tithes & Offerings by Month (Bar Chart) - scaled down
+  const offeringsData = {
     labels: [
       "Jan",
       "Feb",
@@ -66,31 +100,14 @@ const AdminDashboardPage = () => {
     ],
     datasets: [
       {
-        label: "Total Registered Members",
-        data: [
-          10800, 11050, 11200, 11500, 11800, 11950, 12080, 12190, 12250, 12370,
-          12450,
-        ],
-        borderColor: "#0D47A1",
-        backgroundColor: "rgba(13, 71, 161, 0.1)",
-        tension: 0.4,
-      },
-    ],
-  };
-
-  // Tithes & Offerings by Month (Bar Chart)
-  const offeringsData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-    datasets: [
-      {
-        label: "Tithes & Offerings (KES Millions)",
-        data: [3.8, 4.2, 5.1, 4.6, 4.9, 4.8],
+        label: "Tithes & Offerings (KES Thousands)",
+        data: [380, 420, 510, 460, 490, 480, 450, 470, 500, 490, 482],
         backgroundColor: "#0D47A1",
       },
     ],
   };
 
-  // Members by Age Group (Doughnut Chart)
+  // Members by Age Group (Doughnut Chart) - scaled down
   const ageDistributionData = {
     labels: [
       "Children (0-12)",
@@ -100,58 +117,53 @@ const AdminDashboardPage = () => {
     ],
     datasets: [
       {
-        data: [2850, 5200, 3600, 800],
+        data: [450, 800, 600, 200],
         backgroundColor: ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6"],
         hoverOffset: 8,
       },
     ],
   };
 
-  // Top 5 Active Parishes in Kenya
-  const topParishes = [
-    { parish: "PCEA Lang'ata", members: 890, attendance: "92%" },
-    { parish: "PCEA Thika Road", members: 820, attendance: "88%" },
-    { parish: "PCEA St. Andrews", members: 780, attendance: "95%" },
-    { parish: "PCEA Juja", members: 710, attendance: "85%" },
-    { parish: "PCEA Kiambu", members: 690, attendance: "89%" },
+  // Top 5 Regions by Members
+  const topRegions = [
+    { region: "Nairobi CBD", members: 600, attendance: "95%" },
+    { region: "Ruiru", members: 500, attendance: "92%" },
+    { region: "Kiambu", members: 400, attendance: "89%" },
+    { region: "Mombasa Road", members: 300, attendance: "88%" },
+    { region: "Thika Road", members: 250, attendance: "85%" },
   ];
 
-  // Recent Activities (Church-specific)
+  // Recent Activities (updated dates, no parish)
   const recentActivities = [
     {
       id: 1,
       activity: "New Members Induction",
-      parish: "Lang'ata",
       status: "Completed",
       date: "2025-11-17",
     },
     {
       id: 2,
       activity: "Youth Conference Registration",
-      parish: "Nairobi West",
       status: "In Progress",
       date: "2025-11-18",
     },
     {
       id: 3,
       activity: "Christmas Cantata Rehearsal",
-      parish: "St. Andrews",
       status: "Scheduled",
-      date: "2025-11-20",
+      date: "2025-12-10",
     },
     {
       id: 4,
       activity: "Mission Trip to Turkana",
-      parish: "Mission Dept",
       status: "Planning",
-      date: "2025-11-22",
+      date: "2025-12-15",
     },
     {
       id: 5,
       activity: "Presbytery Meeting",
-      parish: "HQ Karen",
       status: "Upcoming",
-      date: "2025-11-25",
+      date: "2025-12-20",
     },
   ];
 
@@ -159,11 +171,8 @@ const AdminDashboardPage = () => {
     <div className="w-full lg:p-2 space-y-8 bg-gray-50 min-h-screen">
       <div className="mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-          PCEA National Admin Dashboard
+          PCEA CBD Admin Dashboard
         </h1>
-        <p className="text-gray-600 mt-1">
-          Presbyterian Church of East Africa • Kenya
-        </p>
       </div>
 
       {/* Stats Cards */}
@@ -197,9 +206,9 @@ const AdminDashboardPage = () => {
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Active Parishes</p>
+              <p className="text-sm text-gray-600">Total Regions</p>
               <p className="text-2xl font-bold text-gray-900">
-                {stats.activeParishes}
+                {stats.totalRegions}
               </p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
@@ -273,8 +282,15 @@ const AdminDashboardPage = () => {
         </div>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2  gap-6">
+      {/* Charts Row - added membership growth */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+            Membership Growth (2025)
+          </h3>
+          <Line data={membershipGrowthData} options={{ responsive: true }} />
+        </div>
+
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold mb-4 text-gray-800">
             Tithes & Offerings (2025)
@@ -286,15 +302,12 @@ const AdminDashboardPage = () => {
           <h3 className="text-lg font-semibold mb-4 text-gray-800">
             Members by Age Group
           </h3>
-
           <div className="h-64">
-            {" "}
-            {/* fixed height */}
             <Doughnut
               data={ageDistributionData}
               options={{
                 responsive: true,
-                maintainAspectRatio: false, // important
+                maintainAspectRatio: false,
                 plugins: { legend: { position: "right" } },
               }}
             />
@@ -302,17 +315,17 @@ const AdminDashboardPage = () => {
         </div>
       </div>
 
-      {/* Bottom Row: Top Parishes + Recent Activities */}
+      {/* Bottom Row: Top Regions + Recent Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top 5 Parishes */}
+        {/* Top 5 Regions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-5 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">
-              Top 5 Active Parishes
+              Top 5 Regions by Members
             </h3>
           </div>
           <div className="p-5">
-            {topParishes.map((p, i) => (
+            {topRegions.map((r, i) => (
               <div
                 key={i}
                 className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0"
@@ -322,12 +335,12 @@ const AdminDashboardPage = () => {
                     #{i + 1}
                   </span>
                   <div>
-                    <p className="font-medium text-gray-900">{p.parish}</p>
-                    <p className="text-sm text-gray-500">{p.members} members</p>
+                    <p className="font-medium text-gray-900">{r.region}</p>
+                    <p className="text-sm text-gray-500">{r.members} members</p>
                   </div>
                 </div>
                 <span className="text-green-600 font-semibold">
-                  {p.attendance}
+                  {r.attendance}
                 </span>
               </div>
             ))}
@@ -350,7 +363,7 @@ const AdminDashboardPage = () => {
                       {act.activity}
                     </td>
                     <td className="px-5 py-4 text-sm text-gray-600">
-                      {act.parish}
+                      {act.date}
                     </td>
                     <td className="px-5 py-4">
                       <span
