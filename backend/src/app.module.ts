@@ -9,13 +9,24 @@ import { JwtModule } from '@nestjs/jwt';
 import { User } from './modules/users/entities/user.entity';
 import { Role } from './modules/roles/entities/role.entity';
 import { Region } from './modules/regions/entities/region.entity';
-import { Family } from './modules/family/entities/family.entity'; // Added import
+import { Family } from './modules/family/entities/family.entity';
+import { AnnualContribution } from './modules/annual-contributions/entities/annual-contribution.entity';
+import { MonthlyContribution } from './modules/monthly-contributions/entities/monthly-contribution.entity';
+import { Payment } from './modules/payments/entities/payment.entity';
+import { Campaign } from './modules/campaigns/entities/campaign.entity';
+import { CampaignDistribution } from './modules/campaigns/entities/campaign-distribution.entity';
+import { Notice } from './modules/notices/entities/notice.entity';
 import { SeedService } from './core/seed/seed.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { RegionsModule } from './modules/regions/regions.module';
 import { UsersModule } from './modules/users/users.module';
 import { RolesModule } from './modules/roles/roles.module';
-import { FamilyModule } from './modules/family/families.module'; // Added import
+import { FamilyModule } from './modules/family/families.module';
+import { AnnualContributionsModule } from './modules/annual-contributions/annual-contributions.module';
+import { MonthlyContributionsModule } from './modules/monthly-contributions/monthly-contributions.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { CampaignsModule } from './modules/campaigns/campaigns.module';
+import { NoticesModule } from './modules/notices/notices.module';
 import AppConfig from './core/config/app.config';
 
 @Module({
@@ -32,7 +43,18 @@ import AppConfig from './core/config/app.config';
       },
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Role, Region, Family]),
+    TypeOrmModule.forFeature([
+      User,
+      Role,
+      Region,
+      Family,
+      AnnualContribution,
+      MonthlyContribution,
+      Payment,
+      Campaign,
+      CampaignDistribution,
+      Notice,
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
@@ -55,6 +77,11 @@ import AppConfig from './core/config/app.config';
     UsersModule,
     RolesModule,
     FamilyModule,
+    AnnualContributionsModule,
+    MonthlyContributionsModule,
+    PaymentsModule,
+    CampaignsModule,
+    NoticesModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedService],

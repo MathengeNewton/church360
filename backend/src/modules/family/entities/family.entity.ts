@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
@@ -56,4 +57,17 @@ export class Family {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
+
+  // Relationships
+  @OneToMany(
+    () => require('../../annual-contributions/entities/annual-contribution.entity').AnnualContribution,
+    (annualContribution: any) => annualContribution.family,
+  )
+  annualContributions: any[];
+
+  @OneToMany(
+    () => require('../../payments/entities/payment.entity').Payment,
+    (payment: any) => payment.family,
+  )
+  payments: any[];
 }

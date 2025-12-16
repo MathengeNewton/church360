@@ -1,0 +1,394 @@
+// components/LoginForm.jsx
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  EnvelopeIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+} from "@heroicons/react/24/outline";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Link from "next/link";
+
+// HARDCODED USERS — FOR DEVELOPMENT/DEMO ONLY
+const HARDCODED_USERS = [
+  {
+    email: "admin@pcea.or.ke",
+    password: "admin123",
+    role: "admin",
+    name: "Rev. Peter Kamau",
+    redirect: "/admin/dashboard",
+  },
+  {
+    email: "member@pcea.or.ke",
+    password: "user123",
+    role: "user",
+    name: "Sister Mary Wanjiku",
+    redirect: "/user/dashboard",
+  },
+];
+
+export default function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({ email: "", password: "" });
+
+  const router = useRouter();
+
+  // Load remembered email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("pcea-remembered-email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
+  // Validate email format
+  const validateEmail = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email.trim());
+  };
+
+  // Validate password (minimum 6 characters for demo)
+  const validatePassword = (password) => {
+    return password.length >= 6;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Reset previous errors
+    setErrors({ email: "", password: "" });
+
+    let hasError = false;
+
+    // Client-side validation
+    if (!email.trim()) {
+      setErrors((prev) => ({ ...prev, email: "Email is required" }));
+      hasError = true;
+    } else if (!validateEmail(email)) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "Please enter a valid email address",
+      }));
+      hasError = true;
+    }
+
+    if (!password) {
+      setErrors((prev) => ({ ...prev, password: "Password is required" }));
+      hasError = true;
+    } else if (!validatePassword(password)) {
+      setErrors((prev) => ({
+        ...prev,
+        password: "Password must be at least 6 characters long",
+      }));
+      hasError = true;
+    }
+
+    if (hasError) {
+      toast.error("Please fix the errors above");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Try API call first
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"}/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+            password: password,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const token = data.access_token || data.token;
+
+        if (token) {
+          // Store token
+          localStorage.setItem("pcea-token", token);
+          sessionStorage.setItem("pcea-token", token);
+
+          // Store user info
+          const userInfo = {
+            name: data.user?.name || data.name || "User",
+            role: data.user?.roles?.[0]?.name || data.role || "user",
+            email: email.trim().toLowerCase(),
+          };
+
+          sessionStorage.setItem("pcea-user", JSON.stringify(userInfo));
+
+          // Save email if "Remember me" is checked
+          if (rememberMe) {
+            localStorage.setItem("pcea-remembered-email", email.trim());
+          } else {
+            localStorage.removeItem("pcea-remembered-email");
+          }
+
+          toast.success(`Welcome back!`, {
+            icon: <CheckCircleIcon className="h-6 w-6 text-green-600" />,
+          });
+
+          // Redirect based on role
+          const redirect =
+            userInfo.role === "admin"
+              ? "/admin/dashboard"
+              : "/user/dashboard";
+
+          setTimeout(() => {
+            router.push(redirect);
+          }, 1200);
+        } else {
+          throw new Error("No token received");
+        }
+      } else {
+        // Fallback to hardcoded users for demo
+        const user = HARDCODED_USERS.find(
+          (u) =>
+            u.email === email.trim().toLowerCase() && u.password === password
+        );
+
+        if (user) {
+          toast.success(`Welcome back, ${user.name.split(" ")[1]}!`, {
+            icon: <CheckCircleIcon className="h-6 w-6 text-green-600" />,
+          });
+
+          if (rememberMe) {
+            localStorage.setItem("pcea-remembered-email", email.trim());
+          } else {
+            localStorage.removeItem("pcea-remembered-email");
+          }
+
+          sessionStorage.setItem(
+            "pcea-user",
+            JSON.stringify({ name: user.name, role: user.role })
+          );
+
+          setTimeout(() => {
+            router.push(user.redirect);
+          }, 1200);
+        } else {
+          toast.error("Invalid email or password", {
+            icon: <ExclamationCircleIcon className="h-6 w-6 text-red-600" />,
+          });
+          setIsLoading(false);
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      // Fallback to hardcoded users
+      const user = HARDCODED_USERS.find(
+        (u) =>
+          u.email === email.trim().toLowerCase() && u.password === password
+      );
+
+      if (user) {
+        toast.success(`Welcome back, ${user.name.split(" ")[1]}!`, {
+          icon: <CheckCircleIcon className="h-6 w-6 text-green-600" />,
+        });
+
+        if (rememberMe) {
+          localStorage.setItem("pcea-remembered-email", email.trim());
+        } else {
+          localStorage.removeItem("pcea-remembered-email");
+        }
+
+        sessionStorage.setItem(
+          "pcea-user",
+          JSON.stringify({ name: user.name, role: user.role })
+        );
+
+        setTimeout(() => {
+          router.push(user.redirect);
+        }, 1200);
+      } else {
+        toast.error("Invalid email or password", {
+          icon: <ExclamationCircleIcon className="h-6 w-6 text-red-600" />,
+        });
+        setIsLoading(false);
+      }
+    }
+  };
+
+  return (
+    <div>
+      <form
+        className="max-w-md mx-auto w-full p-6 bg-white rounded-2xl shadow-xl border border-gray-100"
+        onSubmit={handleSubmit}
+        noValidate // Prevents native browser validation (we handle it)
+      >
+        <div className="mb-10 text-left">
+          <h1 className="text-xl lg:text-3xl font-bold text-gray-900">
+            Welcome Back
+          </h1>
+          <p className="text-sm lg:text-base text-gray-600 mt-2">
+            Sign in to your PCEA account
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          {/* Email Field */}
+          <div>
+            <label className="block text-sm lg:text-base font-medium text-gray-700 mb-2">
+              Email Address
+            </label>
+            <div className="relative">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`w-full pl-11 pr-4 py-3 rounded-lg border ${
+                  errors.email
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                    : "border-gray-300 focus:border-[#0D47A1] focus:ring-[#0D47A1]/20"
+                } outline-none transition-all`}
+                placeholder="admin@pcea.or.ke"
+                disabled={isLoading}
+              />
+              <EnvelopeIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 pointer-events-none" />
+            </div>
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <ExclamationCircleIcon className="h-4 w-4" />
+                {errors.email}
+              </p>
+            )}
+          </div>
+
+          {/* Password Field */}
+          <div>
+            <label className="block text-sm lg:text-base font-medium text-gray-700 mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`w-full pl-4 pr-12 py-3 rounded-lg border ${
+                  errors.password
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                    : "border-gray-300 focus:border-[#0D47A1] focus:ring-[#0D47A1]/20"
+                } outline-none transition-all`}
+                placeholder="••••••••"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600 transition"
+                tabIndex="-1"
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <ExclamationCircleIcon className="h-4 w-4" />
+                {errors.password}
+              </p>
+            )}
+          </div>
+
+          {/* Remember Me & Forgot Password */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 text-[#0D47A1] rounded focus:ring-[#0D47A1]"
+                disabled={isLoading}
+              />
+              <span className="text-sm lg:text-base text-gray-700">
+                Remember me
+              </span>
+            </label>
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm lg:text-base text-[#0D47A1] hover:underline font-medium"
+            >
+              Forgot password?
+            </Link>
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <div className="mt-8">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className={`w-full py-3.5 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 ${
+              isLoading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-[#0D47A1] hover:bg-[#0D47A1]/90 shadow-lg hover:shadow-xl"
+            }`}
+          >
+            {isLoading ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
+          </button>
+        </div>
+
+        {/* Dev Helper Box - Remove before production */}
+        <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900">
+          <p className="font-bold mb-2 text-amber-800">🔧 Dev Credentials</p>
+          <div className="space-y-1 font-mono">
+            <p>
+              Admin → <strong>admin@pcea.or.ke</strong> / admin123
+            </p>
+            <p>
+              User → <strong>member@pcea.or.ke</strong> / user123
+            </p>
+          </div>
+        </div>
+      </form>
+
+      <ToastContainer position="top-right" autoClose={3000} theme="light" />
+    </div>
+  );
+}
