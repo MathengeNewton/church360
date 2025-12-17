@@ -1,5 +1,3 @@
-# version: '3.8'
-
 services:
   # 1. The Database
   db:
@@ -18,6 +16,7 @@ services:
 
   backend:
     build: ./backend
+    container_name: church360-backend
     depends_on:
       - db
     restart: always
@@ -27,18 +26,28 @@ services:
       DATABASE_USER: church
       DATABASE_PASSWORD: church_pass
       DATABASE_NAME: church360
+      PORT: 3000
     ports:
-      - "4000:3000"
+      - "5400:3000"  # Backend exposed on localhost:5400
     command: npm run start:prod
     networks:
       - app-network
 
-  frontend:
-    build: ./frontend
-    container_name: frontend-app
+  welfare-frontend:
+    build: ./welfare-frontend
+    container_name: welfare-frontend-app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3000"  # Welfare frontend on localhost:3001
+    networks:
+      - app-network
+
+  church-frontend:
+    build: ./church-frontend
+    container_name: church-frontend-app
+    restart: unless-stopped
+    ports:
+      - "3002:3000"  # Church frontend on localhost:3002
     networks:
       - app-network
 
@@ -53,7 +62,8 @@ services:
       - app-network
     depends_on:
       - backend
-      - frontend
+      - welfare-frontend
+      - church-frontend
 
 volumes:
   db_data: {}

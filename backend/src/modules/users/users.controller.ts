@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, UsePipes, ValidationPipe, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, UsePipes, ValidationPipe, Request, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,9 +18,10 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Get all users (admin only)' })
-  async findAll() {
-    return this.usersService.findAll();
+  @ApiOperation({ summary: 'Get all users (admin only). Filter by districtId query parameter.' })
+  @ApiQuery({ name: 'districtId', required: false, type: Number, description: 'Filter users by district ID' })
+  async findAll(@Query('districtId') districtId?: number) {
+    return this.usersService.findAll(districtId ? +districtId : undefined);
   }
 
   @Get(':id')

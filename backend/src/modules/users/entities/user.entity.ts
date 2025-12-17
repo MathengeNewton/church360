@@ -5,10 +5,13 @@ import {
   ManyToMany,
   JoinTable,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Role } from '../../roles/entities/role.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { Family } from 'src/modules/family/entities/family.entity';
+import { District } from '../../regions/entities/district.entity';
 
 @Entity()
 export class User {
@@ -36,5 +39,14 @@ export class User {
   @ApiProperty({ description: 'Family associated with the user' })
   @OneToMany(() => Family, (family) => family.head)
   families: Family[];
+
+  @ApiProperty({ description: 'District the user belongs to', required: true })
+  @ManyToOne(() => District, (district) => district.members, { nullable: false, eager: true })
+  @JoinColumn({ name: 'districtId' })
+  district: District;
+
+  @ApiProperty({ description: 'District ID - REQUIRED', example: 1 })
+  @Column()
+  districtId: number;
 }
 // End of file: src/modules/users/entities/user.entity.ts

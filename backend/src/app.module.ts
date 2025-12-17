@@ -8,7 +8,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { User } from './modules/users/entities/user.entity';
 import { Role } from './modules/roles/entities/role.entity';
-import { Region } from './modules/regions/entities/region.entity';
+import { District } from './modules/regions/entities/district.entity';
 import { Family } from './modules/family/entities/family.entity';
 import { AnnualContribution } from './modules/annual-contributions/entities/annual-contribution.entity';
 import { MonthlyContribution } from './modules/monthly-contributions/entities/monthly-contribution.entity';
@@ -16,9 +16,11 @@ import { Payment } from './modules/payments/entities/payment.entity';
 import { Campaign } from './modules/campaigns/entities/campaign.entity';
 import { CampaignDistribution } from './modules/campaigns/entities/campaign-distribution.entity';
 import { Notice } from './modules/notices/entities/notice.entity';
+import { Sermon } from './modules/sermons/entities/sermon.entity';
+import { Announcement } from './modules/announcements/entities/announcement.entity';
 import { SeedService } from './core/seed/seed.service';
 import { AuthModule } from './modules/auth/auth.module';
-import { RegionsModule } from './modules/regions/regions.module';
+import { DistrictsModule } from './modules/regions/districts.module';
 import { UsersModule } from './modules/users/users.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { FamilyModule } from './modules/family/families.module';
@@ -27,6 +29,8 @@ import { MonthlyContributionsModule } from './modules/monthly-contributions/mont
 import { PaymentsModule } from './modules/payments/payments.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { NoticesModule } from './modules/notices/notices.module';
+import { SermonsModule } from './modules/sermons/sermons.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import AppConfig from './core/config/app.config';
 
 @Module({
@@ -46,7 +50,7 @@ import AppConfig from './core/config/app.config';
     TypeOrmModule.forFeature([
       User,
       Role,
-      Region,
+      District,
       Family,
       AnnualContribution,
       MonthlyContribution,
@@ -54,6 +58,8 @@ import AppConfig from './core/config/app.config';
       Campaign,
       CampaignDistribution,
       Notice,
+      Sermon,
+      Announcement,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -73,7 +79,7 @@ import AppConfig from './core/config/app.config';
       inject: [ConfigService],
     }),
     AuthModule,
-    RegionsModule,
+    DistrictsModule,
     UsersModule,
     RolesModule,
     FamilyModule,
@@ -82,6 +88,8 @@ import AppConfig from './core/config/app.config';
     PaymentsModule,
     CampaignsModule,
     NoticesModule,
+    SermonsModule,
+    AnnouncementsModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedService],

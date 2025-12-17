@@ -1,4 +1,3 @@
-// components/DashBoardHeader.jsx   (or wherever you keep it)
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -8,32 +7,14 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-
-// ===================================================
-// SIMULATED USER – SAME AS proxy.js (keep in sync!)
-// ===================================================
-const SIMULATED_USER = {
-  isLoggedIn: true,
-  role: "admin", // ← Change to "user" to see member view
-  name: "Rev. Peter Kamau",
-  email: "peter.kamau@pcea.or.ke",
-  parish: "PCEA St. Andrews Nairobi",
-  avatar: "https://img.icons8.com/ios-filled/50/0d47a1/test-account.png", // same for both for now
-};
-
-// Optional: Different avatar for regular members
-const getAvatar = () => {
-  if (SIMULATED_USER.role === "user") {
-    return "https://img.icons8.com/ios-filled/50/10b981/user-male-circle.png";
-  }
-  return SIMULATED_USER.avatar;
-};
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function DashBoardHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const { user, logout, hasRole } = useAuth();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -53,18 +34,19 @@ export default function DashBoardHeader() {
 
     let crumbs = [];
 
-    if (segments[0] === "admin" && SIMULATED_USER.role === "admin") {
-      crumbs.push({ name: "Dashboard", href: "/admin/dashboard" });
-      segments.slice(2).forEach((seg, i) => {
-        const href = `/admin/dashboard/${segments.slice(2, i + 3).join("/")}`;
+    // Use actual user role from context
+    if (segments[0] === "admin" && hasRole("admin")) {
+      crumbs.push({ name: "Welfare Admin Dashboard", href: "/admin/dashboard" });
+      segments.slice(1).forEach((seg, i) => {
+        const href = `/admin/${segments.slice(1, i + 2).join("/")}`;
         const name =
           seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, " ");
         crumbs.push({ name, href });
       });
-    } else if (segments[0] === "user" && SIMULATED_USER.role === "user") {
+    } else if (segments[0] === "user") {
       crumbs.push({ name: "My Dashboard", href: "/user/dashboard" });
-      segments.slice(2).forEach((seg, i) => {
-        const href = `/user/dashboard/${segments.slice(2, i + 3).join("/")}`;
+      segments.slice(1).forEach((seg, i) => {
+        const href = `/user/${segments.slice(1, i + 2).join("/")}`;
         const name =
           seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, " ");
         crumbs.push({ name, href });
@@ -77,10 +59,10 @@ export default function DashBoardHeader() {
   const crumbs = getBreadcrumbs();
 
   const handleLogout = () => {
-    // In real app: clear session
-    // For now: just go to login (or simulate logout by reloading)
-    router.push("/auth/login");
+    logout();
   };
+
+  if (!user) return null; // Don't render header if user is not logged in
 
   return (
     <header className="bg-white border-b border-gray-200 p-4 shadow-sm flex items-center justify-between sticky top-0 z-40">
@@ -114,16 +96,16 @@ export default function DashBoardHeader() {
           className="flex items-center gap-3 h-11 px-3 rounded-full bg-white shadow-md border border-gray-200 hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-[#0D47A1]"
         >
           <img
-            src={getAvatar()}
+            src={user.avatar || "https://img.icons8.com/ios-filled/50/0d47a1/test-account.png"}
             alt="User avatar"
             className="w-8 h-8 rounded-full object-cover"
           />
           <div className="hidden md:block text-left">
             <p className="text-sm font-semibold text-gray-900">
-              {SIMULATED_USER.name}
+              {user.username}
             </p>
             <p className="text-xs text-gray-500 capitalize">
-              {SIMULATED_USER.role}
+              {user.roles && user.roles.length > 0 ? user.roles[0].name : 'N/A'}
             </p>
           </div>
           <ChevronDownIcon
@@ -138,20 +120,17 @@ export default function DashBoardHeader() {
           <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
             <div className="px-4 py-3 bg-gradient-to-r from-[#0D47A1]/5 to-blue-50 border-b border-gray-200">
               <p className="text-sm font-bold text-gray-900">
-                {SIMULATED_USER.name}
+                {user.username}
               </p>
               <p className="text-xs text-gray-600 truncate">
-                {SIMULATED_USER.email}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {SIMULATED_USER.parish}
+                {user.email}
               </p>
             </div>
 
             <div className="py-2">
               <Link
                 href={
-                  SIMULATED_USER.role === "admin"
+                  hasRole("admin")
                     ? "/admin/dashboard/profile"
                     : "/user/dashboard/profile"
                 }

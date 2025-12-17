@@ -1,7 +1,11 @@
 import axios from 'axios';
 
-// API base URL - adjust based on your backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3500/api';
+/**
+ * API Configuration
+ * Backend API base URL - defaults to port 5400 (matches docker-compose.yml)
+ * Override with NEXT_PUBLIC_API_URL environment variable
+ */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5400/api';
 
 // Create axios instance
 const api = axios.create({
@@ -50,7 +54,13 @@ api.interceptors.response.use(
 export const apiClient = {
   // Auth
   auth: {
-    login: (credentials) => api.post('/auth/login', credentials),
+    login: (credentials) => {
+      // Backend expects { username, password } but accepts email as username
+      const payload = credentials.username 
+        ? credentials 
+        : { username: credentials.email || credentials.username, password: credentials.password };
+      return api.post('/auth/login', payload);
+    },
     resetPassword: (data) => api.post('/auth/reset-password', data),
   },
 

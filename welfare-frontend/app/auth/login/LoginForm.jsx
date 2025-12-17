@@ -1,6 +1,4 @@
-// components/LoginForm.jsx
 "use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -13,24 +11,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Link from "next/link";
-
-// HARDCODED USERS — FOR DEVELOPMENT/DEMO ONLY
-const HARDCODED_USERS = [
-  {
-    email: "admin@pcea.or.ke",
-    password: "admin123",
-    role: "admin",
-    name: "Rev. Peter Kamau",
-    redirect: "/admin/dashboard",
-  },
-  {
-    email: "member@pcea.or.ke",
-    password: "user123",
-    role: "user",
-    name: "Sister Mary Wanjiku",
-    redirect: "/user/dashboard",
-  },
-];
+import { useAuth } from "../../../contexts/AuthContext";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -41,6 +22,7 @@ export default function LoginForm() {
   const [errors, setErrors] = useState({ email: "", password: "" });
 
   const router = useRouter();
+  const { login } = useAuth();
 
   // Load remembered email on mount
   useEffect(() => {
@@ -100,129 +82,26 @@ export default function LoginForm() {
 
     setIsLoading(true);
 
-    try {
-      // Try API call first
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"}/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.trim().toLowerCase(),
-            password: password,
-          }),
-        }
-      );
+    // Call backend API for authentication
+    // Backend accepts username or email in the username field
+    const result = await login(email.trim(), password);
 
-      if (response.ok) {
-        const data = await response.json();
-        const token = data.access_token || data.token;
-
-        if (token) {
-          // Store token
-          localStorage.setItem("pcea-token", token);
-          sessionStorage.setItem("pcea-token", token);
-
-          // Store user info
-          const userInfo = {
-            name: data.user?.name || data.name || "User",
-            role: data.user?.roles?.[0]?.name || data.role || "user",
-            email: email.trim().toLowerCase(),
-          };
-
-          sessionStorage.setItem("pcea-user", JSON.stringify(userInfo));
-
-          // Save email if "Remember me" is checked
-          if (rememberMe) {
-            localStorage.setItem("pcea-remembered-email", email.trim());
-          } else {
-            localStorage.removeItem("pcea-remembered-email");
-          }
-
-          toast.success(`Welcome back!`, {
-            icon: <CheckCircleIcon className="h-6 w-6 text-green-600" />,
-          });
-
-          // Redirect based on role
-          const redirect =
-            userInfo.role === "admin"
-              ? "/admin/dashboard"
-              : "/user/dashboard";
-
-          setTimeout(() => {
-            router.push(redirect);
-          }, 1200);
-        } else {
-          throw new Error("No token received");
-        }
+    if (result.success) {
+      // Save email if "Remember me" is checked
+      if (rememberMe) {
+        localStorage.setItem("pcea-remembered-email", email.trim());
       } else {
-        // Fallback to hardcoded users for demo
-        const user = HARDCODED_USERS.find(
-          (u) =>
-            u.email === email.trim().toLowerCase() && u.password === password
-        );
-
-        if (user) {
-          toast.success(`Welcome back, ${user.name.split(" ")[1]}!`, {
-            icon: <CheckCircleIcon className="h-6 w-6 text-green-600" />,
-          });
-
-          if (rememberMe) {
-            localStorage.setItem("pcea-remembered-email", email.trim());
-          } else {
-            localStorage.removeItem("pcea-remembered-email");
-          }
-
-          sessionStorage.setItem(
-            "pcea-user",
-            JSON.stringify({ name: user.name, role: user.role })
-          );
-
-          setTimeout(() => {
-            router.push(user.redirect);
-          }, 1200);
-        } else {
-          toast.error("Invalid email or password", {
-            icon: <ExclamationCircleIcon className="h-6 w-6 text-red-600" />,
-          });
-          setIsLoading(false);
-        }
+        localStorage.removeItem("pcea-remembered-email");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      // Fallback to hardcoded users
-      const user = HARDCODED_USERS.find(
-        (u) =>
-          u.email === email.trim().toLowerCase() && u.password === password
-      );
 
-      if (user) {
-        toast.success(`Welcome back, ${user.name.split(" ")[1]}!`, {
-          icon: <CheckCircleIcon className="h-6 w-6 text-green-600" />,
-        });
-
-        if (rememberMe) {
-          localStorage.setItem("pcea-remembered-email", email.trim());
-        } else {
-          localStorage.removeItem("pcea-remembered-email");
-        }
-
-        sessionStorage.setItem(
-          "pcea-user",
-          JSON.stringify({ name: user.name, role: user.role })
-        );
-
-        setTimeout(() => {
-          router.push(user.redirect);
-        }, 1200);
-      } else {
-        toast.error("Invalid email or password", {
-          icon: <ExclamationCircleIcon className="h-6 w-6 text-red-600" />,
-        });
-        setIsLoading(false);
-      }
+      // Redirect after toast
+      const userRole = result.user.roles.some(r => r.name === 'admin') ? 'admin' : 'user';
+      setTimeout(() => {
+        router.push(userRole === 'admin' ? "/admin/dashboard" : "/user/dashboard");
+      }, 1200);
+    } else {
+      // Error message handled by AuthContext
+      setIsLoading(false);
     }
   };
 
@@ -379,10 +258,7 @@ export default function LoginForm() {
           <p className="font-bold mb-2 text-amber-800">🔧 Dev Credentials</p>
           <div className="space-y-1 font-mono">
             <p>
-              Admin → <strong>admin@pcea.or.ke</strong> / admin123
-            </p>
-            <p>
-              User → <strong>member@pcea.or.ke</strong> / user123
+              Admin → <strong>admin@church360.org</strong> / admin123
             </p>
           </div>
         </div>
