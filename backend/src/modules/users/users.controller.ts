@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, UsePipes, ValidationPipe, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, UsePipes, ValidationPipe, Request, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AssignRolesDto } from './dto/assign-roles.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -18,9 +19,18 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Get all users (admin only)' })
-  async findAll() {
-    return this.usersService.findAll();
+  @ApiOperation({ summary: 'Get all users (admin only). Filter by districtId query parameter.' })
+  @ApiQuery({ name: 'districtId', required: false, type: Number, description: 'Filter users by district ID' })
+  async findAll(@Query('districtId') districtId?: number) {
+    return this.usersService.findAll(districtId ? +districtId : undefined);
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: 'Search users by username or email' })
+  @ApiQuery({ name: 'q', required: true, description: 'Search query (username or email)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Maximum number of results (default: 20)' })
+  async search(@Query('q') query: string, @Query('limit') limit?: number) {
+    return this.usersService.search(query, limit ? +limit : undefined);
   }
 
   @Get(':id')
@@ -65,5 +75,12 @@ export class UsersController {
   @ApiOperation({ summary: 'Get current user profile' })
   async getProfile(@Request() req) {
     return this.usersService.findOne(req.user.userId);
+  }
+
+  @Put('me')
+  @ApiOperation({ summary: 'Update current user profile' })
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async updateProfile(@Request() req, @Body() updateDto: UpdateProfileDto) {
+    return this.usersService.update(req.user.userId, updateDto);
   }
 }

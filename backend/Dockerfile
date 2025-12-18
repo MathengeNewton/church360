@@ -1,5 +1,5 @@
-# Use Node.js LTS as the base image
-FROM node:18
+# Use Node.js 20 LTS as the base image (crypto is available globally)
+FROM node:20
 
 # Set working directory
 WORKDIR /app

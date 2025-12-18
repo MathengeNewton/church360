@@ -1,54 +1,72 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsEnum,
+  IsInt,
   IsNumber,
+  IsPositive,
+  IsEnum,
+  IsDateString,
   IsOptional,
   IsString,
-  IsPositive,
-  ValidateIf,
+  Min,
 } from 'class-validator';
-import { PaymentMethod, PaymentStatus } from '../entities/payments.entity';
+import { PaymentMethod } from '../entities/payment.entity';
 
 export class CreatePaymentDto {
-  @ApiProperty({ description: 'ID of the user making the payment', example: 1 })
-  @IsNumber()
+  @ApiProperty({
+    description: 'Family ID',
+    example: 1,
+  })
+  @IsInt()
+  @IsPositive()
+  familyId: number;
+
+  @ApiProperty({
+    description: 'User ID who made the payment (primary member or spouse)',
+    example: 1,
+  })
+  @IsInt()
+  @IsPositive()
   userId: number;
 
-  @ApiProperty({ description: 'Amount paid', example: 1000.0 })
+  @ApiProperty({
+    description: 'Payment amount',
+    example: 5000,
+  })
   @IsNumber()
   @IsPositive()
   amount: number;
 
-  @ApiProperty({ enum: PaymentMethod, example: PaymentMethod.MPESA })
-  @IsEnum(PaymentMethod)
-  method: PaymentMethod;
+  @ApiProperty({
+    description: 'Date of payment',
+    example: '2025-01-15',
+  })
+  @IsDateString()
+  paymentDate: string;
 
   @ApiProperty({
-    enum: PaymentStatus,
-    example: PaymentStatus.COMPLETED,
-    default: PaymentStatus.COMPLETED,
+    description: 'Payment method',
+    enum: PaymentMethod,
+    example: PaymentMethod.MPESA,
   })
-  @IsEnum(PaymentStatus)
-  @IsOptional()
-  status?: PaymentStatus;
+  @IsEnum(PaymentMethod)
+  paymentMethod: PaymentMethod;
 
-  @ApiProperty({ description: 'Required if method is MPESA', required: false })
-  @ValidateIf((o: CreatePaymentDto) => o.method === PaymentMethod.MPESA)
-  @IsString()
-  mpesaCode?: string;
-
-  @ApiProperty({ description: 'Required if method is MPESA', required: false })
-  @ValidateIf((o: CreatePaymentDto) => o.method === PaymentMethod.MPESA)
-  @IsString()
-  phoneNumber?: string;
-
-  @ApiProperty({ description: 'Person receiving the cash', required: false })
-  @ValidateIf((o: CreatePaymentDto) => o.method === PaymentMethod.CASH)
-  @IsString()
-  receivedBy?: string;
-
-  @ApiProperty({ description: 'Receipt number if available', required: false })
+  @ApiProperty({
+    description: 'Payment reference number',
+    example: 'MPESA123456',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  receiptNumber?: string;
+  reference?: string;
+
+  @ApiProperty({
+    description: 'Additional notes about the payment',
+    example: 'Payment for January to March',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
+

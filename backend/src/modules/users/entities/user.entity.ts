@@ -5,11 +5,20 @@ import {
   ManyToMany,
   JoinTable,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Role } from '../../roles/entities/role.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { Family } from 'src/modules/family/entities/family.entity';
-import { Payment } from 'src/modules/payments/entities/payments.entity';
+import { FamilyMember } from '../../family/entities/family-member.entity';
+import { District } from '../../regions/entities/district.entity';
+
+export enum UserType {
+  PRIMARY_MEMBER = 'PRIMARY_MEMBER',
+  SPOUSE = 'SPOUSE',
+  OFFSPRING = 'OFFSPRING',
+  STANDALONE = 'STANDALONE',
+}
 
 @Entity()
 export class User {
@@ -21,8 +30,8 @@ export class User {
   @Column({ unique: true })
   username: string;
 
-  @ApiProperty({ description: 'Email', example: 'email' })
-  @Column({ unique: true })
+  @ApiProperty({ description: 'Email', example: 'email', required: false })
+  @Column({ unique: true, nullable: true })
   email: string;
 
   @ApiProperty({ description: 'Password', example: 'password' })
@@ -34,14 +43,29 @@ export class User {
   @JoinTable()
   roles: Role[];
 
-  @ApiProperty({ description: 'Family associated with the user' })
-  @OneToMany(() => Family, (family) => family.head)
-  families: Family[];
+  @ApiProperty({ description: 'Family memberships' })
+  @OneToMany(() => FamilyMember, (member) => member.user)
+  familyMemberships: FamilyMember[];
+
+  @ApiProperty({ description: 'District the user belongs to', required: true })
+  @ManyToOne(() => District, (district) => district.members, { nullable: false, eager: true })
+  @JoinColumn({ name: 'districtId' })
+  district: District;
+
+  @ApiProperty({ description: 'District ID - REQUIRED', example: 1 })
+  @Column()
+  districtId: number;
 
   @ApiProperty({
-    description: 'Payments made by the user',
-    type: () => [Payment],
+    description: 'User type in family context',
+    enum: UserType,
+    example: UserType.STANDALONE,
+    default: UserType.STANDALONE,
   })
-  @OneToMany(() => Payment, (payment) => payment.user)
-  payments: Payment[];
+  @Column({
+    type: 'enum',
+    enum: UserType,
+    default: UserType.STANDALONE,
+  })
+  userType: UserType;
 }

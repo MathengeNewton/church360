@@ -3,10 +3,12 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/user.entity';
+import { FamilyMember } from './family-member.entity';
 
 @Entity()
 export class Family {
@@ -34,10 +36,9 @@ export class Family {
   @Column({ type: 'int', nullable: true })
   generations: number;
 
-  @ApiProperty({ description: 'Family Head' })
-  @ManyToOne(() => User, { eager: true })
-  @JoinColumn({ name: 'headId' })
-  head: User;
+  @ApiProperty({ description: 'Family members' })
+  @OneToMany(() => FamilyMember, (member) => member.family, { eager: true })
+  members: FamilyMember[];
 
   @ApiProperty({
     description: 'Date when the family was added to the system',
@@ -56,4 +57,17 @@ export class Family {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
+
+  // Relationships
+  @OneToMany(
+    () => require('../../annual-contributions/entities/annual-contribution.entity').AnnualContribution,
+    (annualContribution: any) => annualContribution.family,
+  )
+  annualContributions: any[];
+
+  @OneToMany(
+    () => require('../../payments/entities/payment.entity').Payment,
+    (payment: any) => payment.family,
+  )
+  payments: any[];
 }
