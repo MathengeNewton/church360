@@ -1,13 +1,8 @@
-// Polyfill global crypto for TypeORM bug in some Docker/Node 18 builds
-// import { randomUUID } from 'crypto';
-// (global as any).crypto = { randomUUID };
-
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { config as dotenvConfig } from 'dotenv';
 
-// Load environment variables
 dotenvConfig();
 
 async function bootstrap() {

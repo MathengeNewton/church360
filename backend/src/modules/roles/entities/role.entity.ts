@@ -13,7 +13,6 @@ export class Role {
   users: User[];
 }
 
-
 export enum UserRole {
   ADMIN = 'admin',
   FIELD_AGENT = 'field_agent',

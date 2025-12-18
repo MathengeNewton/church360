@@ -69,4 +69,3 @@ export class User {
   })
   userType: UserType;
 }
-// End of file: src/modules/users/entities/user.entity.ts

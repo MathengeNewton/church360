@@ -41,8 +41,7 @@ import AppConfig from './core/config/app.config';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        // Ensure a valid TypeOrmModuleOptions object is always returned
+      useFactory: (configService: ConfigService) => {
         return configService.get<TypeOrmModuleOptions>('database')!;
       },
       inject: [ConfigService],
