@@ -47,7 +47,6 @@ export default function DashboardLayout({ children }) {
       icon: CreditCardIcon,
     },
     { name: "Payments", href: "/admin/payments", icon: ChartBarIcon },
-    { name: "Campaigns", href: "/admin/campaigns", icon: BriefcaseIcon },
     {
       name: "Notices",
       href: "/admin/notices",

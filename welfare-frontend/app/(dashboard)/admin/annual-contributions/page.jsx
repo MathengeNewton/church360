@@ -28,12 +28,17 @@ const AnnualContributionsPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      const currentYear = new Date().getFullYear();
       const [contributionsRes, familiesRes] = await Promise.all([
         apiClient.annualContributions.getAll(),
         apiClient.families.getAll(),
       ]);
-      setContributions(contributionsRes.data);
-      setFamilies(familiesRes.data);
+      // Filter to only show current year contributions
+      const currentYearContributions = (contributionsRes.data || []).filter(
+        (c) => c.year === currentYear
+      );
+      setContributions(currentYearContributions);
+      setFamilies(familiesRes.data || []);
     } catch (error) {
       toast.error("Failed to load data");
       console.error(error);

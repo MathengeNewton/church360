@@ -34,7 +34,10 @@ services:
       - app-network
 
   welfare-frontend:
-    build: ./welfare-frontend
+    build:
+      context: ./welfare-frontend
+      args:
+        NEXT_PUBLIC_API_URL: https://api-church360.jerdyl.co.ke/api
     container_name: welfare-frontend-app
     restart: unless-stopped
     ports:
@@ -43,7 +46,10 @@ services:
       - app-network
 
   church-frontend:
-    build: ./church-frontend
+    build:
+      context: ./church-frontend
+      args:
+        NEXT_PUBLIC_API_URL: https://api-church360.jerdyl.co.ke/api
     container_name: church-frontend-app
     restart: unless-stopped
     ports:

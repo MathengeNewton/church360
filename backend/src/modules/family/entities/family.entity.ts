@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/user.entity';
+import { FamilyMember } from './family-member.entity';
 
 @Entity()
 export class Family {
@@ -35,10 +36,9 @@ export class Family {
   @Column({ type: 'int', nullable: true })
   generations: number;
 
-  @ApiProperty({ description: 'Family Head' })
-  @ManyToOne(() => User, { eager: true })
-  @JoinColumn({ name: 'headId' })
-  head: User;
+  @ApiProperty({ description: 'Family members' })
+  @OneToMany(() => FamilyMember, (member) => member.family, { eager: true })
+  members: FamilyMember[];
 
   @ApiProperty({
     description: 'Date when the family was added to the system',

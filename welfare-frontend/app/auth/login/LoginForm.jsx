@@ -5,7 +5,6 @@ import {
   EnvelopeIcon,
   EyeIcon,
   EyeSlashIcon,
-  CheckCircleIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { toast, ToastContainer } from "react-toastify";
@@ -39,7 +38,7 @@ export default function LoginForm() {
     return emailRegex.test(email.trim());
   };
 
-  // Validate password (minimum 6 characters for demo)
+  // Validate password (minimum 6 characters)
   const validatePassword = (password) => {
     return password.length >= 6;
   };
@@ -83,7 +82,6 @@ export default function LoginForm() {
     setIsLoading(true);
 
     // Call backend API for authentication
-    // Backend accepts username or email in the username field
     const result = await login(email.trim(), password);
 
     if (result.success) {
@@ -95,9 +93,13 @@ export default function LoginForm() {
       }
 
       // Redirect after toast
-      const userRole = result.user.roles.some(r => r.name === 'admin') ? 'admin' : 'user';
+      const userRole = result.user.roles.some((r) => r.name === "admin")
+        ? "admin"
+        : "user";
       setTimeout(() => {
-        router.push(userRole === 'admin' ? "/admin/dashboard" : "/user/dashboard");
+        router.push(
+          userRole === "admin" ? "/admin/dashboard" : "/user/dashboard"
+        );
       }, 1200);
     } else {
       // Error message handled by AuthContext
@@ -107,24 +109,20 @@ export default function LoginForm() {
 
   return (
     <div>
-      <form
-        className="max-w-md mx-auto w-full p-6 bg-white rounded-2xl shadow-xl border border-gray-100"
-        onSubmit={handleSubmit}
-        noValidate // Prevents native browser validation (we handle it)
-      >
-        <div className="mb-10 text-left">
-          <h1 className="text-xl lg:text-3xl font-bold text-gray-900">
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome Back
           </h1>
-          <p className="text-sm lg:text-base text-gray-600 mt-2">
-            Sign in to your PCEA account
+          <p className="text-gray-600">
+            Sign in to access the Welfare Management System
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Email Field */}
           <div>
-            <label className="block text-sm lg:text-base font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Email Address
             </label>
             <div className="relative">
@@ -135,9 +133,9 @@ export default function LoginForm() {
                 className={`w-full pl-11 pr-4 py-3 rounded-lg border ${
                   errors.email
                     ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                    : "border-gray-300 focus:border-[#0D47A1] focus:ring-[#0D47A1]/20"
+                    : "border-gray-300 focus:border-blue-600 focus:ring-blue-600/20"
                 } outline-none transition-all`}
-                placeholder="admin@pcea.or.ke"
+                placeholder="admin@church360.org"
                 disabled={isLoading}
               />
               <EnvelopeIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 pointer-events-none" />
@@ -152,7 +150,7 @@ export default function LoginForm() {
 
           {/* Password Field */}
           <div>
-            <label className="block text-sm lg:text-base font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Password
             </label>
             <div className="relative">
@@ -163,7 +161,7 @@ export default function LoginForm() {
                 className={`w-full pl-4 pr-12 py-3 rounded-lg border ${
                   errors.password
                     ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                    : "border-gray-300 focus:border-[#0D47A1] focus:ring-[#0D47A1]/20"
+                    : "border-gray-300 focus:border-blue-600 focus:ring-blue-600/20"
                 } outline-none transition-all`}
                 placeholder="••••••••"
                 disabled={isLoading}
@@ -196,16 +194,14 @@ export default function LoginForm() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 text-[#0D47A1] rounded focus:ring-[#0D47A1]"
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-600"
                 disabled={isLoading}
               />
-              <span className="text-sm lg:text-base text-gray-700">
-                Remember me
-              </span>
+              <span className="text-sm text-gray-700">Remember me</span>
             </label>
             <Link
               href="/auth/forgot-password"
-              className="text-sm lg:text-base text-[#0D47A1] hover:underline font-medium"
+              className="text-sm text-blue-600 hover:underline font-medium"
             >
               Forgot password?
             </Link>
@@ -220,7 +216,7 @@ export default function LoginForm() {
             className={`w-full py-3.5 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 ${
               isLoading
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-[#0D47A1] hover:bg-[#0D47A1]/90 shadow-lg hover:shadow-xl"
+                : "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 shadow-lg hover:shadow-xl"
             }`}
           >
             {isLoading ? (
@@ -248,19 +244,9 @@ export default function LoginForm() {
                 Signing in...
               </>
             ) : (
-              "Sign In"
+              "Sign In to Welfare System"
             )}
           </button>
-        </div>
-
-        {/* Dev Helper Box - Remove before production */}
-        <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900">
-          <p className="font-bold mb-2 text-amber-800">🔧 Dev Credentials</p>
-          <div className="space-y-1 font-mono">
-            <p>
-              Admin → <strong>admin@church360.org</strong> / admin123
-            </p>
-          </div>
         </div>
       </form>
 

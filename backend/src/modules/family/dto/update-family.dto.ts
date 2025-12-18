@@ -29,13 +29,4 @@ export class UpdateFamilyDto extends PartialType(CreateFamilyDto) {
   @IsOptional()
   @IsInt()
   generations?: number;
-
-  @ApiProperty({
-    example: 1,
-    description: 'The ID of the user who is the head of the family',
-    required: false,
-  })
-  @IsOptional()
-  @IsInt()
-  headId?: number;
 }

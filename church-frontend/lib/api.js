@@ -2,10 +2,10 @@ import axios from 'axios';
 
 /**
  * API Configuration
- * Backend API base URL - defaults to port 5400 (matches docker-compose.yml)
+ * Backend API base URL - production API endpoint
  * Override with NEXT_PUBLIC_API_URL environment variable
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5400/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-church360.jerdyl.co.ke/api';
 
 // Create axios instance
 const api = axios.create({
@@ -114,6 +114,26 @@ export const apiClient = {
     delete: (id) => api.delete(`/announcements/${id}`),
     publish: (id) => api.post(`/announcements/${id}/publish`),
     expire: (id) => api.post(`/announcements/${id}/expire`),
+  },
+
+  // Events
+  events: {
+    getAll: (params) => api.get('/events', { params }),
+    getById: (id) => api.get(`/events/${id}`),
+    getUpcoming: (limit) => api.get('/events/upcoming', { params: limit ? { limit } : {} }),
+    getMobile: () => api.get('/events/mobile'),
+    create: (data) => api.post('/events', data),
+    update: (id, data) => api.put(`/events/${id}`, data),
+    delete: (id) => api.delete(`/events/${id}`),
+    publish: (id) => api.post(`/events/${id}/publish`),
+    cancel: (id) => api.post(`/events/${id}/cancel`),
+  },
+
+  // Settings / Profile
+  profile: {
+    get: () => api.get('/users/me'),
+    update: (data) => api.put('/users/me', data),
+    changePassword: (data) => api.post('/auth/change-password', data),
   },
 };
 

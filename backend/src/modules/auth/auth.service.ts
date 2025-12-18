@@ -74,4 +74,28 @@ export class AuthService {
     await this.userRepo.save(user);
     return { message: 'Password has been reset successfully' };
   }
+
+  async changePassword(userId: number, currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    const user = await this.userRepo.findOne({ 
+      where: { id: userId },
+      select: ['id', 'password', 'username', 'email'],
+    });
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new Error('Current password is incorrect');
+    }
+
+    // Hash and save new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await this.userRepo.save(user);
+    
+    return { message: 'Password changed successfully' };
+  }
 }

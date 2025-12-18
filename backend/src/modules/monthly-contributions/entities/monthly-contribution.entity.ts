@@ -3,12 +3,10 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { AnnualContribution } from '../../annual-contributions/entities/annual-contribution.entity';
-import { CampaignDistribution } from '../../campaigns/entities/campaign-distribution.entity';
 
 export enum MonthlyContributionStatus {
   PENDING = 'pending',
@@ -101,11 +99,5 @@ export class MonthlyContribution {
   )
   @JoinColumn({ name: 'annualContributionId' })
   annualContribution: AnnualContribution;
-
-  @OneToMany(
-    () => CampaignDistribution,
-    (campaignDistribution) => campaignDistribution.monthlyContribution,
-  )
-  campaignDistributions: CampaignDistribution[];
 }
 

@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { Role } from '../roles/entities/role.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { User } from './entities/user.entity';
+import { Repository, In, Like } from 'typeorm';
+import { User, UserType } from './entities/user.entity';
 import { UserRole } from '../roles/entities/role.entity';
 import { District } from '../regions/entities/district.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -55,11 +55,24 @@ export class UsersService {
       }
     }
     
+    // Generate unique email if not provided
+    let finalEmail = createDto.email;
+    if (!finalEmail) {
+      let emailAttempt = `${createDto.username}@church360.local`;
+      let attemptCount = 0;
+      while (await this.userRepo.findOne({ where: { email: emailAttempt } })) {
+        attemptCount++;
+        emailAttempt = `${createDto.username}${attemptCount}@church360.local`;
+      }
+      finalEmail = emailAttempt;
+    }
+
     const user = this.userRepo.create({
       username: createDto.username,
-      email: createDto.email,
+      email: finalEmail,
       password: createDto.password,
       districtId: createDto.districtId,
+      userType: (createDto as any).userType || UserType.STANDALONE,
       roles,
     });
     
@@ -133,5 +146,28 @@ export class UsersService {
 // For now, set to empty array to avoid type error:
 user.roles = [];
     return this.userRepo.save(user);
+  }
+
+  /**
+   * Search users by username or email
+   */
+  async search(query: string, limit: number = 20): Promise<User[]> {
+    if (!query || query.trim().length < 2) {
+      return [];
+    }
+
+    const searchTerm = `%${query.trim()}%`;
+    
+    return this.userRepo.find({
+      where: [
+        { username: Like(searchTerm) },
+        { email: Like(searchTerm) },
+      ],
+      relations: ['district', 'roles'],
+      take: limit,
+      order: {
+        username: 'ASC',
+      },
+    });
   }
 }

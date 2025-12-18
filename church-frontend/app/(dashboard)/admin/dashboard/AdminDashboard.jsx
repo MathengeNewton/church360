@@ -3,31 +3,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "../../../../lib/api";
 import { toast } from "react-toastify";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from "chart.js";
-import { Line, Bar, Doughnut } from "react-chartjs-2";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 const AdminDashboardPage = () => {
   const router = useRouter();
@@ -39,8 +14,6 @@ const AdminDashboardPage = () => {
     publishedSermons: 0,
     totalAnnouncements: 0,
     activeAnnouncements: 0,
-    upcomingEvents: 0,
-    tithesThisMonth: "KES 482,000",
   });
   const [recentSermons, setRecentSermons] = useState([]);
   const [activeAnnouncements, setActiveAnnouncements] = useState([]);
@@ -82,8 +55,8 @@ const AdminDashboardPage = () => {
         publishedSermons,
         totalAnnouncements: allAnnouncements.length,
         activeAnnouncements: announcements.length,
-        upcomingEvents: 5,
-        tithesThisMonth: "KES 482,000",
+        upcomingEvents: 0, // Will be updated when Events API is implemented
+        tithesThisMonth: "KES 0", // Will be updated when financial API is implemented
       });
       setRecentSermons(recentSermonsList);
       setActiveAnnouncements(activeAnnouncementsList);
@@ -95,76 +68,8 @@ const AdminDashboardPage = () => {
     }
   };
 
-  // Membership Growth Over Time (Line Chart)
-  const membershipGrowthData = {
-    labels: [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ],
-    datasets: [
-      {
-        label: "Total Registered Members",
-        data: [
-          1800, 1850, 1870, 1900, 1930, 1950, 1970, 1990, 2000, 2020, 2040,
-          stats.totalMembers || 2050,
-        ],
-        borderColor: "#0D47A1",
-        backgroundColor: "rgba(13, 71, 161, 0.1)",
-        tension: 0.4,
-      },
-    ],
-  };
-
-  // Tithes & Offerings by Month (Bar Chart)
-  const offeringsData = {
-    labels: [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-    ],
-    datasets: [
-      {
-        label: "Tithes & Offerings (KES Thousands)",
-        data: [380, 420, 510, 460, 490, 480, 450, 470, 500, 490, 482],
-        backgroundColor: "#0D47A1",
-      },
-    ],
-  };
-
-  // Members by Age Group (Doughnut Chart)
-  const ageDistributionData = {
-    labels: [
-      "Children (0-12)",
-      "Youth (13-35)",
-      "Adults (36-60)",
-      "Seniors (60+)",
-    ],
-    datasets: [
-      {
-        data: [450, 800, 600, 200],
-        backgroundColor: ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6"],
-        hoverOffset: 8,
-      },
-    ],
-  };
+  // Note: Charts removed - will be re-added when backend provides historical data
+  // For now, dashboard shows only real-time stats from API
 
   if (loading) {
     return (
@@ -200,7 +105,7 @@ const AdminDashboardPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -307,91 +212,9 @@ const AdminDashboardPage = () => {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Tithes This Month</p>
-              <p className="text-2xl font-bold text-[#0D47A1]">
-                {stats.tithesThisMonth}
-              </p>
-            </div>
-            <div className="p-3 bg-yellow-100 rounded-full">
-              <svg
-                className="w-7 h-7 text-yellow-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Upcoming Events</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {stats.upcomingEvents}
-              </p>
-            </div>
-            <div className="p-3 bg-orange-100 rounded-full">
-              <svg
-                className="w-7 h-7 text-orange-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
-            Membership Growth (2025)
-          </h3>
-          <Line data={membershipGrowthData} options={{ responsive: true }} />
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
-            Tithes & Offerings (2025)
-          </h3>
-          <Bar data={offeringsData} options={{ responsive: true }} />
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
-            Members by Age Group
-          </h3>
-          <div className="h-64">
-            <Doughnut
-              data={ageDistributionData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: "right" } },
-              }}
-            />
-          </div>
-        </div>
-      </div>
+      {/* Charts Row - Removed dummy charts, will be re-added when backend provides historical data */}
 
       {/* Bottom Row: Recent Sermons + Active Announcements */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -9,13 +9,12 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend,
   ArcElement,
 } from "chart.js";
-import { Line, Bar, Doughnut } from "react-chartjs-2";
+import { Line, Doughnut } from "react-chartjs-2";
 import { apiClient } from "../../../../lib/api";
 import { toast } from "react-toastify";
 
@@ -24,7 +23,6 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   ArcElement,
   Title,
   Tooltip,
@@ -48,7 +46,6 @@ const WelfareAdminDashboard = () => {
     overdue: 0,
   });
   const [recentPayments, setRecentPayments] = useState([]);
-  const [recentDistributions, setRecentDistributions] = useState([]);
   const [familiesWithOverdue, setFamiliesWithOverdue] = useState([]);
 
   useEffect(() => {
@@ -70,7 +67,6 @@ const WelfareAdminDashboard = () => {
         undistributedPaymentsRes,
         overdueContributionsRes,
         monthlyContributionsRes,
-        campaignsRes,
       ] = await Promise.all([
         apiClient.families.getAll().catch(() => ({ data: [] })),
         apiClient.annualContributions.getAll().catch(() => ({ data: [] })),
@@ -78,7 +74,6 @@ const WelfareAdminDashboard = () => {
         apiClient.payments.getUndistributed().catch(() => ({ data: [] })),
         apiClient.monthlyContributions.getOverdue().catch(() => ({ data: [] })),
         apiClient.monthlyContributions.getAll().catch(() => ({ data: [] })),
-        apiClient.campaigns.getAll().catch(() => ({ data: [] })),
       ]);
 
       const families = familiesRes.data || [];
@@ -87,7 +82,6 @@ const WelfareAdminDashboard = () => {
       const undistributedPayments = undistributedPaymentsRes.data || [];
       const overdueContributions = overdueContributionsRes.data || [];
       const monthlyContributions = monthlyContributionsRes.data || [];
-      const campaigns = campaignsRes.data || [];
 
       // Calculate stats
       const totalAnnualAmount = annualContributions.reduce(
@@ -122,13 +116,7 @@ const WelfareAdminDashboard = () => {
         )
         .slice(0, 10);
 
-      // Get recent distributions (last 5)
-      const recentDistributionsList = campaigns
-        .sort(
-          (a, b) =>
-            new Date(b.distributionDate) - new Date(a.distributionDate)
-        )
-        .slice(0, 5);
+      // Recent distributions removed (no longer using campaigns)
 
       // Get families with overdue contributions
       const familyOverdueMap = new Map();
@@ -182,7 +170,6 @@ const WelfareAdminDashboard = () => {
       setPaymentTrends(last6Months);
       setContributionStatus(statusCounts);
       setRecentPayments(recentPaymentsList);
-      setRecentDistributions(recentDistributionsList);
       setFamiliesWithOverdue(Array.from(familyOverdueMap.values()).slice(0, 5));
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
@@ -223,21 +210,6 @@ const WelfareAdminDashboard = () => {
     ],
   };
 
-  // Distribution Activity Chart (Bar Chart)
-  const distributionData = {
-    labels: recentDistributions
-      .slice(0, 6)
-      .map((d, i) => `Dist ${i + 1}`),
-    datasets: [
-      {
-        label: "Amount Distributed (KES)",
-        data: recentDistributions
-          .slice(0, 6)
-          .map((d) => Number(d.totalDistributed || 0)),
-        backgroundColor: "#0D47A1",
-      },
-    ],
-  };
 
   if (loading) {
     return (
@@ -419,21 +391,6 @@ const WelfareAdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
-            Recent Distributions
-          </h3>
-          {recentDistributions.length > 0 ? (
-            <Bar
-              data={distributionData}
-              options={{ responsive: true, maintainAspectRatio: true }}
-            />
-          ) : (
-            <div className="h-64 flex items-center justify-center text-gray-500">
-              No distributions yet
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Bottom Row: Recent Payments + Families with Overdue */}
@@ -544,12 +501,6 @@ const WelfareAdminDashboard = () => {
             className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition text-center"
           >
             <p className="font-semibold text-green-900">Record Payment</p>
-          </a>
-          <a
-            href="/admin/campaigns"
-            className="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition text-center"
-          >
-            <p className="font-semibold text-orange-900">Distribute Payment</p>
           </a>
           <a
             href="/admin/notices"

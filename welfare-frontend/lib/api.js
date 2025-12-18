@@ -2,10 +2,10 @@ import axios from 'axios';
 
 /**
  * API Configuration
- * Backend API base URL - defaults to port 5400 (matches docker-compose.yml)
+ * Backend API base URL - production API endpoint
  * Override with NEXT_PUBLIC_API_URL environment variable
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5400/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-church360.jerdyl.co.ke/api';
 
 // Create axios instance
 const api = axios.create({
@@ -68,9 +68,16 @@ export const apiClient = {
   families: {
     getAll: () => api.get('/families'),
     getOne: (id) => api.get(`/families/${id}`),
+    getTree: (id) => api.get(`/families/${id}/tree`),
     create: (data) => api.post('/families', data),
     update: (id, data) => api.put(`/families/${id}`, data),
     delete: (id) => api.delete(`/families/${id}`),
+  },
+
+  // Districts
+  districts: {
+    getAll: () => api.get('/districts'),
+    getById: (id) => api.get(`/districts/${id}`),
   },
 
   // Annual Contributions
@@ -113,14 +120,6 @@ export const apiClient = {
     delete: (id) => api.delete(`/payments/${id}`),
   },
 
-  // Campaigns
-  campaigns: {
-    getAll: (params = {}) => api.get('/campaigns', { params }),
-    getOne: (id) => api.get(`/campaigns/${id}`),
-    create: (data) => api.post('/campaigns', data),
-    autoDistribute: (data) => api.post('/campaigns/auto-distribute', data),
-    undo: (id) => api.post(`/campaigns/${id}/undo`),
-  },
 
   // Notices
   notices: {
@@ -140,7 +139,8 @@ export const apiClient = {
   // Users
   users: {
     getAll: () => api.get('/users'),
-    getOne: (id) => api.get(`/users/${id}`),
+    getById: (id) => api.get(`/users/${id}`),
+    search: (query, limit) => api.get('/users/search', { params: { q: query, limit } }),
     create: (data) => api.post('/users', data),
     update: (id, data) => api.put(`/users/${id}`, data),
     delete: (id) => api.delete(`/users/${id}`),

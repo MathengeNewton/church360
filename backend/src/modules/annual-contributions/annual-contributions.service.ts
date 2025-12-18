@@ -82,8 +82,14 @@ export class AnnualContributionsService {
     return this.findOne(savedAnnual.id);
   }
 
-  async findAll(familyId?: number): Promise<AnnualContribution[]> {
-    const where = familyId ? { familyId } : {};
+  async findAll(familyId?: number, currentYearOnly: boolean = true): Promise<AnnualContribution[]> {
+    const currentYear = new Date().getFullYear();
+    const where: any = familyId ? { familyId } : {};
+    
+    if (currentYearOnly) {
+      where.year = currentYear;
+    }
+    
     return this.annualContributionRepo.find({
       where,
       relations: ['family', 'monthlyContributions'],

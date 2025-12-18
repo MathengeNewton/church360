@@ -32,13 +32,10 @@ export default function DashboardLayout({ children }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Admin menu
+  // Admin menu - Church Admin
   const adminMenu = [
     { name: "Dashboard", href: "/admin/dashboard", icon: HomeIcon },
-
     { name: "Users", href: "/admin/users", icon: UserIcon },
-    { name: "Families", href: "/admin/families", icon: FolderOpenIcon },
-    { name: "Campaigns", href: "/admin/campaigns", icon: BriefcaseIcon },
     {
       name: "Districts",
       href: "/admin/districts",
@@ -54,23 +51,8 @@ export default function DashboardLayout({ children }) {
       href: "/admin/announcements",
       icon: BellIcon,
     },
-    {
-      name: "Contributions",
-      href: "/admin/contributions",
-      icon: CreditCardIcon,
-    },
-    { name: "Payments", href: "/admin/payments", icon: ChartBarIcon },
-
-    // Events
-    { name: "Events", href: "/admin/#", icon: CalendarIcon },
-
-    { name: "Messages", href: "/admin/#", icon: EnvelopeIcon },
-
-    // Users
-    { name: "User Management", href: "/admin/#", icon: CogIcon },
-
-    // Settings
-    { name: "Settings", href: "/admin/#", icon: LifebuoyIcon },
+    { name: "Events", href: "/admin/events", icon: CalendarIcon },
+    { name: "Settings", href: "/admin/settings", icon: CogIcon },
   ];
 
   // Regular user menu

@@ -3,12 +3,10 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Family } from '../../family/entities/family.entity';
-import { Campaign } from '../../campaigns/entities/campaign.entity';
 
 export enum PaymentMethod {
   CASH = 'cash',
@@ -32,6 +30,10 @@ export class Payment {
   @ApiProperty({ description: 'Family ID', example: 1 })
   @Column()
   familyId: number;
+
+  @ApiProperty({ description: 'User ID who made the payment', example: 1 })
+  @Column()
+  userId: number;
 
   @ApiProperty({
     description: 'Payment amount',
@@ -119,8 +121,5 @@ export class Payment {
   @ManyToOne(() => Family)
   @JoinColumn({ name: 'familyId' })
   family: Family;
-
-  @OneToMany(() => Campaign, (campaign) => campaign.payment)
-  campaigns: Campaign[];
 }
 

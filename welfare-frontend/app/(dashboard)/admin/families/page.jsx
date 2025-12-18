@@ -1,296 +1,553 @@
-// app/(dashboard)/admin/families/page.jsx
-// Families page: List of families with visual tree structure (father, mother, children).
-// Added CRUD operations with modal for create/edit.
-// Visual tree using Tailwind CSS styled divs instead of simple list.
-// More mock data with regions matching single parish setup.
-// Aesthetics similar: cards, tables.
-
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiClient } from "../../../../lib/api";
+import { toast } from "react-toastify";
+import UserSearch from "../../../../components/UserSearch";
+import FamilyTree from "../../../../components/FamilyTree";
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
 
-const mockFamilies = [
-  {
-    id: 1,
-    familyName: "Kamau Family",
-    father: "John Kamau",
-    mother: "Mary Kamau",
-    children: ["Alice Kamau (12)", "Bob Kamau (8)"],
-    region: "Ruiru",
-  },
-  {
-    id: 2,
-    familyName: "Wanjiku Family",
-    father: "Peter Wanjiku",
-    mother: "Anne Wanjiku",
-    children: ["Carol Wanjiku (15)", "David Wanjiku (10)", "Eve Wanjiku (5)"],
-    region: "Mombasa Road",
-  },
-  {
-    id: 3,
-    familyName: "Mutua Family",
-    father: "James Mutua",
-    mother: "Grace Mutua",
-    children: ["Frank Mutua (7)", "Gloria Mutua (3)"],
-    region: "Kiambu",
-  },
-  {
-    id: 4,
-    familyName: "Njeri Family",
-    father: "Samuel Njeri",
-    mother: "Esther Njeri",
-    children: ["Henry Njeri (18)", "Ivy Njeri (14)"],
-    region: "Thika Road",
-  },
-  {
-    id: 5,
-    familyName: "Ochieng Family",
-    father: "Michael Ochieng",
-    mother: "Sarah Ochieng",
-    children: ["Jack Ochieng (9)"],
-    region: "Nairobi CBD",
-  },
-];
-
-const FamiliesPage = () => {
-  const [families, setFamilies] = useState(mockFamilies);
-  const [expanded, setExpanded] = useState([]);
+export default function FamiliesPage() {
+  const [families, setFamilies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedRows, setExpandedRows] = useState(new Set());
   const [showModal, setShowModal] = useState(false);
   const [editingFamily, setEditingFamily] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [districts, setDistricts] = useState([]);
   const [formData, setFormData] = useState({
-    familyName: "",
-    father: "",
-    mother: "",
-    region: "",
-    children: "",
+    name: "",
+    address: "",
+    primaryMember: null,
+    spouse: null,
+    offsprings: [],
+  });
+  const [newOffspring, setNewOffspring] = useState({
+    user: null,
+    relationship: "",
   });
 
-  const toggleExpand = (id) => {
-    setExpanded((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+  useEffect(() => {
+    loadFamilies();
+    loadDistricts();
+  }, []);
+
+  const loadDistricts = async () => {
+    try {
+      const response = await apiClient.districts.getAll();
+      setDistricts(response.data || []);
+    } catch (error) {
+      console.error("Error loading districts:", error);
+    }
+  };
+
+  const loadFamilies = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.families.getAll();
+      setFamilies(response.data || []);
+    } catch (error) {
+      console.error("Error loading families:", error);
+      toast.error("Failed to load families");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleRow = (familyId) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(familyId)) {
+      newExpanded.delete(familyId);
+    } else {
+      newExpanded.add(familyId);
+    }
+    setExpandedRows(newExpanded);
   };
 
   const handleCreate = () => {
     setEditingFamily(null);
     setFormData({
-      familyName: "",
-      father: "",
-      mother: "",
-      region: "",
-      children: "",
+      name: "",
+      address: "",
+      primaryMember: null,
+      spouse: null,
+      offsprings: [],
     });
+    setNewOffspring({ user: null, relationship: "" });
     setShowModal(true);
   };
 
   const handleEdit = (family) => {
     setEditingFamily(family);
-    setFormData({ ...family, children: family.children.join(", ") });
+    const primaryMember = family.members?.find(
+      (m) => m.role === "PRIMARY_MEMBER"
+    );
+    const spouse = family.members?.find((m) => m.role === "SPOUSE");
+    const offsprings = family.members?.filter((m) => m.role === "OFFSPRING");
+
+    setFormData({
+      name: family.name || "",
+      address: family.address || "",
+      primaryMember: primaryMember?.user || null,
+      spouse: spouse?.user || null,
+      offsprings: offsprings.map((o) => ({
+        user: o.user,
+        relationship: o.relationship || "",
+      })),
+    });
+    setNewOffspring({ user: null, relationship: "" });
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
-    setFamilies(families.filter((f) => f.id !== id));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const childrenArray = formData.children
-      .split(",")
-      .map((c) => c.trim())
-      .filter((c) => c);
-    const familyData = { ...formData, children: childrenArray };
-    if (editingFamily) {
-      setFamilies(
-        families.map((f) =>
-          f.id === editingFamily.id ? { ...f, ...familyData } : f
-        )
-      );
-    } else {
-      setFamilies([...families, { id: families.length + 1, ...familyData }]);
+  const handleDelete = async (id) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this family? This action cannot be undone."
+      )
+    ) {
+      return;
     }
-    setShowModal(false);
+
+    try {
+      await apiClient.families.delete(id);
+      toast.success("Family deleted successfully");
+      loadFamilies();
+    } catch (error) {
+      console.error("Error deleting family:", error);
+      toast.error(error.response?.data?.message || "Failed to delete family");
+    }
   };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleAddOffspring = () => {
+    if (!newOffspring.user) {
+      toast.error("Please select a user for the offspring");
+      return;
+    }
+    setFormData({
+      ...formData,
+      offsprings: [...formData.offsprings, { ...newOffspring }],
+    });
+    setNewOffspring({ user: null, relationship: "" });
   };
+
+  const handleRemoveOffspring = (index) => {
+    setFormData({
+      ...formData,
+      offsprings: formData.offsprings.filter((_, i) => i !== index),
+    });
+  };
+
+  const buildFamilyPayload = () => {
+    const payload = {
+      name: formData.name,
+      address: formData.address || undefined,
+      primaryMember: formData.primaryMember?.id
+        ? { userId: formData.primaryMember.id }
+        : null,
+      spouse: formData.spouse
+        ? formData.spouse.id
+          ? {
+              userId: formData.spouse.id,
+              relationship: formData.spouse.relationship || "spouse",
+            }
+          : null
+        : undefined,
+      offsprings: formData.offsprings
+        .map((offspring) =>
+          offspring.user?.id
+            ? {
+                userId: offspring.user.id,
+                relationship: offspring.relationship || "child",
+              }
+            : null
+        )
+        .filter(Boolean),
+    };
+
+    if (!formData.primaryMember?.id && formData.primaryMember) {
+      toast.error("Please select an existing user or create one first");
+      return null;
+    }
+
+    return payload;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.primaryMember) {
+      toast.error("Primary member is required");
+      return;
+    }
+
+    const payload = buildFamilyPayload();
+    if (!payload) return;
+
+    try {
+      if (editingFamily) {
+        await apiClient.families.update(editingFamily.id, payload);
+        toast.success("Family updated successfully");
+      } else {
+        await apiClient.families.create(payload);
+        toast.success("Family created successfully");
+      }
+      setShowModal(false);
+      loadFamilies();
+    } catch (error) {
+      console.error("Error saving family:", error);
+      toast.error(error.response?.data?.message || "Failed to save family");
+    }
+  };
+
+  const filteredFamilies = families.filter((family) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      family.name?.toLowerCase().includes(query) ||
+      family.members?.some((m) =>
+        m.user?.username?.toLowerCase().includes(query) ||
+        m.user?.email?.toLowerCase().includes(query)
+      )
+    );
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600">Loading families...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full space-y-8 bg-gray-50 min-h-screen p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-          Families Management
-        </h1>
-        <p className="text-gray-600 mt-1">Manage PCEA church family trees</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+            Families Management
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Manage PCEA welfare family structures
+          </p>
+        </div>
+        <button
+          onClick={handleCreate}
+          className="bg-blue-900 text-white px-4 py-2 rounded-md hover:bg-[#1e88b5] transition-colors flex items-center gap-2"
+        >
+          <PlusIcon className="h-5 w-5" />
+          Create Family
+        </button>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Family List</h3>
-          <button
-            onClick={handleCreate}
-            className="bg-blue-900 text-white px-4 py-2 rounded-md hover:bg-[#1e88b5]"
-          >
-            Create Family
-          </button>
+      {/* Search */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search families by name or member..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
+        />
+      </div>
+
+      {/* Families Table */}
+      {filteredFamilies.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No Families Found
+          </h3>
+          <p className="text-gray-600 mb-6">
+            {searchQuery
+              ? "Try adjusting your search query"
+              : "Start by creating your first family"}
+          </p>
+          {!searchQuery && (
+            <button
+              onClick={handleCreate}
+              className="bg-blue-900 text-white px-6 py-2 rounded-md hover:bg-[#1e88b5] transition-colors inline-flex items-center gap-2"
+            >
+              <PlusIcon className="h-5 w-5" />
+              Create Your First Family
+            </button>
+          )}
         </div>
-        <div className="overflow-x-auto">
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">
+                  {/* Expand column */}
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Family Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Father
+                  Address
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Mother
+                  Members
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Region
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {families.map((family) => (
-                <>
-                  <tr key={family.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <button
-                        onClick={() => toggleExpand(family.id)}
-                        className="font-medium"
-                      >
-                        {family.familyName}{" "}
-                        {expanded.includes(family.id) ? "▼" : "▶"}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {family.father}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {family.mother}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {family.region}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(family)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(family.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                  {expanded.includes(family.id) && (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-4 bg-gray-50">
-                        <p className="font-semibold mb-2">Family Tree:</p>
-                        <div className="flex flex-col items-center">
-                          <div className="flex space-x-4 mb-2">
-                            <div className="bg-blue-100 text-blue-800 p-3 rounded-lg shadow">
-                              {family.father}
-                            </div>
-                            <div className="bg-pink-100 text-pink-800 p-3 rounded-lg shadow">
-                              {family.mother}
-                            </div>
-                          </div>
-                          <div className="h-6 w-0.5 bg-gray-400"></div>
-                          <div className="flex flex-wrap justify-center gap-3 mt-2">
-                            {family.children.map((child, idx) => (
-                              <div
-                                key={idx}
-                                className="bg-green-100 text-green-800 p-3 rounded-lg shadow"
-                              >
-                                {child}
-                              </div>
-                            ))}
-                          </div>
+              {filteredFamilies.map((family) => {
+                const isExpanded = expandedRows.has(family.id);
+                const primaryMember = family.members?.find(
+                  (m) => m.role === "PRIMARY_MEMBER"
+                );
+                const spouse = family.members?.find((m) => m.role === "SPOUSE");
+                const offsprings = family.members?.filter(
+                  (m) => m.role === "OFFSPRING"
+                );
+
+                return (
+                  <>
+                    <tr
+                      key={family.id}
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => toggleRow(family.id)}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {isExpanded ? (
+                          <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+                        ) : (
+                          <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="font-medium text-gray-900">
+                          {family.name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {family.address || "—"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <FamilyTree family={family} compact={true} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => handleEdit(family)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Edit"
+                          >
+                            <PencilIcon className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(family.id)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete"
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
-                  )}
-                </>
-              ))}
+                    {isExpanded && (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-4 bg-gray-50">
+                          <div className="py-4">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                              Family Tree
+                            </h4>
+                            <FamilyTree family={family} compact={false} />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
             </tbody>
           </table>
         </div>
-      </div>
+      )}
 
+      {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">
-              {editingFamily ? "Edit Family" : "Create Family"}
-            </h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
-              <input
-                type="text"
-                name="familyName"
-                value={formData.familyName}
-                onChange={handleChange}
-                placeholder="Family Name"
-                className="w-full p-2 border rounded mb-2"
-                required
-              />
-              <input
-                type="text"
-                name="father"
-                value={formData.father}
-                onChange={handleChange}
-                placeholder="Father"
-                className="w-full p-2 border rounded mb-2"
-                required
-              />
-              <input
-                type="text"
-                name="mother"
-                value={formData.mother}
-                onChange={handleChange}
-                placeholder="Mother"
-                className="w-full p-2 border rounded mb-2"
-                required
-              />
-              <input
-                type="text"
-                name="region"
-                value={formData.region}
-                onChange={handleChange}
-                placeholder="Region"
-                className="w-full p-2 border rounded mb-2"
-                required
-              />
-              <input
-                type="text"
-                name="children"
-                value={formData.children}
-                onChange={handleChange}
-                placeholder="Children (comma separated, e.g., Alice (12), Bob (8))"
-                className="w-full p-2 border rounded mb-4"
-              />
-              <div className="flex justify-end gap-2">
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {editingFamily ? "Edit Family" : "Create New Family"}
+                </h2>
+              </div>
+              <div className="p-6 space-y-6">
+                {/* Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Family Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-900 focus:border-blue-900"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) =>
+                        setFormData({ ...formData, address: e.target.value })
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-900 focus:border-blue-900"
+                    />
+                  </div>
+                </div>
+
+                {/* Primary Member */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Primary Member (Head of Household) *
+                  </label>
+                  <UserSearch
+                    value={formData.primaryMember?.id}
+                    onChange={(userId) => {
+                      if (userId) {
+                        apiClient.users.getById(userId).then((res) => {
+                          setFormData({
+                            ...formData,
+                            primaryMember: res.data,
+                          });
+                        });
+                      } else {
+                        setFormData({ ...formData, primaryMember: null });
+                      }
+                    }}
+                    onSelectUser={(user) => {
+                      setFormData({ ...formData, primaryMember: user });
+                    }}
+                    placeholder="Search for primary member..."
+                    districts={districts}
+                  />
+                </div>
+
+                {/* Spouse */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Spouse (Optional)
+                  </label>
+                  <UserSearch
+                    value={formData.spouse?.id}
+                    onChange={(userId) => {
+                      if (userId) {
+                        apiClient.users.getById(userId).then((res) => {
+                          setFormData({ ...formData, spouse: res.data });
+                        });
+                      } else {
+                        setFormData({ ...formData, spouse: null });
+                      }
+                    }}
+                    onSelectUser={(user) => {
+                      setFormData({ ...formData, spouse: user });
+                    }}
+                    placeholder="Search for spouse..."
+                    districts={districts}
+                  />
+                </div>
+
+                {/* Offsprings */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Offsprings (Children/Dependents)
+                  </label>
+                  {formData.offsprings.length > 0 && (
+                    <div className="mb-3 space-y-2">
+                      {formData.offsprings.map((offspring, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium">
+                              {offspring.user?.username}
+                            </p>
+                            {offspring.relationship && (
+                              <p className="text-sm text-gray-500">
+                                ({offspring.relationship})
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveOffspring(index)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <UserSearch
+                        value={newOffspring.user?.id}
+                        onSelectUser={(user) => {
+                          setNewOffspring({ ...newOffspring, user });
+                        }}
+                        placeholder="Search for offspring..."
+                        districts={districts}
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      value={newOffspring.relationship}
+                      onChange={(e) =>
+                        setNewOffspring({
+                          ...newOffspring,
+                          relationship: e.target.value,
+                        })
+                      }
+                      placeholder="Relationship (e.g., son, daughter)"
+                      className="w-48 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-900 focus:border-blue-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddOffspring}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded"
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-900 text-white px-4 py-2 rounded"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-[#1e88b5]"
                 >
-                  Save
+                  {editingFamily ? "Update Family" : "Create Family"}
                 </button>
               </div>
             </form>
@@ -299,6 +556,4 @@ const FamiliesPage = () => {
       )}
     </div>
   );
-};
-
-export default FamiliesPage;
+}

@@ -21,6 +21,14 @@ export class CreatePaymentDto {
   familyId: number;
 
   @ApiProperty({
+    description: 'User ID who made the payment (primary member or spouse)',
+    example: 1,
+  })
+  @IsInt()
+  @IsPositive()
+  userId: number;
+
+  @ApiProperty({
     description: 'Payment amount',
     example: 5000,
   })

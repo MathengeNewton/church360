@@ -40,6 +40,13 @@ export class FamilyController {
     return this.familyService.findOne(id);
   }
 
+  @Get(':id/tree')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get family tree structure' })
+  async getFamilyTree(@Param('id') id: number) {
+    return this.familyService.getFamilyTree(id);
+  }
+
   @Post()
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a new family' })

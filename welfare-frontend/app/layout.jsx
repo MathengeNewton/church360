@@ -26,7 +26,7 @@ export const metadata = {
     type: "website",
     images: [
       {
-        url: "/images/og-image.png",
+        url: "/images/og-image.png", // Relative URL - no hardcoded localhost
         width: 1200,
         height: 630,
         alt: "PCEA Church Kenya",
