@@ -8,6 +8,8 @@ import {
   Param,
   Query,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -16,6 +18,7 @@ import { UserRole } from '../roles/entities/role.entity';
 import { AnnualContributionsService } from './annual-contributions.service';
 import { CreateAnnualContributionDto } from './dto/create-annual-contribution.dto';
 import { UpdateAnnualContributionDto } from './dto/update-annual-contribution.dto';
+import { BulkCreateAnnualContributionDto } from './dto/bulk-create-annual-contribution.dto';
 
 @ApiTags('Annual Contributions')
 @ApiBearerAuth()
@@ -25,6 +28,37 @@ export class AnnualContributionsController {
   constructor(
     private readonly annualContributionsService: AnnualContributionsService,
   ) {}
+
+  @Post('bulk-create')
+  @Roles(UserRole.ADMIN)
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  @ApiOperation({ summary: 'Create annual contributions for all families for a year' })
+  async bulkCreate(
+    @Body() bulkCreateDto: BulkCreateAnnualContributionDto,
+  ) {
+    return this.annualContributionsService.createBulkForAllFamilies(
+      bulkCreateDto.year,
+      bulkCreateDto.annualAmount,
+    );
+  }
+
+  @Post('carryover')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Carry over debt from one year to another' })
+  async carryOver(
+    @Body()
+    body: {
+      familyId: number;
+      fromYear: number;
+      toYear: number;
+    },
+  ) {
+    return this.annualContributionsService.carryOverDebt(
+      body.familyId,
+      body.fromYear,
+      body.toYear,
+    );
+  }
 
   @Post()
   @Roles(UserRole.ADMIN)
@@ -65,24 +99,6 @@ export class AnnualContributionsController {
   async delete(@Param('id') id: string) {
     await this.annualContributionsService.delete(+id);
     return { message: 'Annual contribution deleted successfully' };
-  }
-
-  @Post('carryover')
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Carry over debt from one year to another' })
-  async carryOver(
-    @Body()
-    body: {
-      familyId: number;
-      fromYear: number;
-      toYear: number;
-    },
-  ) {
-    return this.annualContributionsService.carryOverDebt(
-      body.familyId,
-      body.fromYear,
-      body.toYear,
-    );
   }
 }
 

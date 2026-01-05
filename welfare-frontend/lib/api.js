@@ -91,6 +91,7 @@ export const apiClient = {
     update: (id, data) => api.put(`/annual-contributions/${id}`, data),
     delete: (id) => api.delete(`/annual-contributions/${id}`),
     carryOver: (data) => api.post('/annual-contributions/carryover', data),
+    bulkCreate: (data) => api.post('/annual-contributions/bulk-create', data),
   },
 
   // Monthly Contributions

@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AnnualContribution } from './entities/annual-contribution.entity';
 import { MonthlyContribution } from '../monthly-contributions/entities/monthly-contribution.entity';
+import { Family } from '../family/entities/family.entity';
 import { CreateAnnualContributionDto } from './dto/create-annual-contribution.dto';
 import { UpdateAnnualContributionDto } from './dto/update-annual-contribution.dto';
 import { AnnualContributionStatus } from './entities/annual-contribution.entity';
@@ -19,6 +20,8 @@ export class AnnualContributionsService {
     private readonly annualContributionRepo: Repository<AnnualContribution>,
     @InjectRepository(MonthlyContribution)
     private readonly monthlyContributionRepo: Repository<MonthlyContribution>,
+    @InjectRepository(Family)
+    private readonly familyRepo: Repository<Family>,
   ) {}
 
   async create(
@@ -209,6 +212,69 @@ export class AnnualContributionsService {
     await this.annualContributionRepo.update(annualContributionId, {
       totalPaid: totalPaid,
     });
+  }
+
+  async createBulkForAllFamilies(
+    year: number,
+    annualAmount: number,
+  ): Promise<{
+    created: number;
+    skipped: number;
+    createdFamilies: number[];
+    skippedFamilies: number[];
+  }> {
+    // Get all families
+    const allFamilies = await this.familyRepo.find();
+    
+    if (allFamilies.length === 0) {
+      throw new BadRequestException('No families found in the system');
+    }
+
+    // Get all existing annual contributions for the year
+    const existingContributions = await this.annualContributionRepo.find({
+      where: { year },
+    });
+
+    // Create a set of family IDs that already have contributions
+    const familiesWithContributions = new Set(
+      existingContributions.map((c) => c.familyId),
+    );
+
+    // Filter families that need contributions
+    const familiesToCreate = allFamilies.filter(
+      (family) => !familiesWithContributions.has(family.id),
+    );
+
+    const createdFamilies: number[] = [];
+    // Initialize skipped families with those that already have contributions
+    const skippedFamilies: number[] = allFamilies
+      .filter((family) => familiesWithContributions.has(family.id))
+      .map((family) => family.id);
+
+    // Create contributions for families that don't have them
+    for (const family of familiesToCreate) {
+      try {
+        const createDto: CreateAnnualContributionDto = {
+          familyId: family.id,
+          year: year,
+          annualAmount: annualAmount,
+          carriedOverAmount: 0,
+        };
+
+        await this.create(createDto);
+        createdFamilies.push(family.id);
+      } catch (error) {
+        // If creation fails (e.g., duplicate check or other error), skip it
+        skippedFamilies.push(family.id);
+      }
+    }
+
+    return {
+      created: createdFamilies.length,
+      skipped: skippedFamilies.length,
+      createdFamilies,
+      skippedFamilies,
+    };
   }
 }
 

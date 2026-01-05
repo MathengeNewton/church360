@@ -9,6 +9,8 @@ const AnnualContributionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showCarryoverModal, setShowCarryoverModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkCreating, setBulkCreating] = useState(false);
   const [formData, setFormData] = useState({
     familyId: "",
     year: new Date().getFullYear(),
@@ -19,6 +21,10 @@ const AnnualContributionsPage = () => {
     familyId: "",
     fromYear: new Date().getFullYear() - 1,
     toYear: new Date().getFullYear(),
+  });
+  const [bulkFormData, setBulkFormData] = useState({
+    year: new Date().getFullYear(),
+    annualAmount: "",
   });
 
   useEffect(() => {
@@ -90,6 +96,41 @@ const AnnualContributionsPage = () => {
     }
   };
 
+  const handleBulkCreate = () => {
+    setBulkFormData({
+      year: new Date().getFullYear(),
+      annualAmount: "",
+    });
+    setShowBulkModal(true);
+  };
+
+  const handleBulkSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setBulkCreating(true);
+      const response = await apiClient.annualContributions.bulkCreate({
+        year: parseInt(bulkFormData.year),
+        annualAmount: parseFloat(bulkFormData.annualAmount),
+      });
+      
+      const result = response.data;
+      toast.success(
+        `Bulk creation completed! Created: ${result.created}, Skipped: ${result.skipped}`
+      );
+      setShowBulkModal(false);
+      loadData();
+    } catch (error) {
+      console.error("Bulk create error:", error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          "Failed to create bulk contributions";
+      toast.error(errorMessage);
+    } finally {
+      setBulkCreating(false);
+    }
+  };
+
   const getFamilyName = (familyId) => {
     const family = families.find((f) => f.id === familyId);
     return family?.name || `Family ${familyId}`;
@@ -120,6 +161,12 @@ const AnnualContributionsPage = () => {
             className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
           >
             Carry Over Debt
+          </button>
+          <button
+            onClick={handleBulkCreate}
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+          >
+            Create for All Families
           </button>
           <button
             onClick={handleCreate}
@@ -337,6 +384,62 @@ const AnnualContributionsPage = () => {
                   className="bg-orange-600 text-white px-4 py-2 rounded"
                 >
                   Carry Over
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Create Modal */}
+      {showBulkModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-96">
+            <h3 className="text-lg font-semibold mb-4">
+              Create for All Families
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              This will create annual contribution records for all families that don't already have one for the selected year.
+            </p>
+            <form onSubmit={handleBulkSubmit}>
+              <input
+                type="number"
+                name="year"
+                value={bulkFormData.year}
+                onChange={(e) =>
+                  setBulkFormData({ ...bulkFormData, year: e.target.value })
+                }
+                placeholder="Year"
+                className="w-full p-2 border rounded mb-2"
+                required
+              />
+              <input
+                type="number"
+                name="annualAmount"
+                value={bulkFormData.annualAmount}
+                onChange={(e) =>
+                  setBulkFormData({ ...bulkFormData, annualAmount: e.target.value })
+                }
+                placeholder="Annual Amount"
+                className="w-full p-2 border rounded mb-4"
+                required
+                step="0.01"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkModal(false)}
+                  className="px-4 py-2 border rounded"
+                  disabled={bulkCreating}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  disabled={bulkCreating}
+                >
+                  {bulkCreating ? "Creating..." : "Create for All"}
                 </button>
               </div>
             </form>
