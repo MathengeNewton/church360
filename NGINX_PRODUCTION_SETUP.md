@@ -141,3 +141,4 @@ curl http://localhost:5400/api/health
 - Static assets are cached for 1 year for optimal performance
 - Hidden files and source files are blocked for security
 
+

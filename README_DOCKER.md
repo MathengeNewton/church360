@@ -131,3 +131,4 @@ cd church-frontend && npm run dev
 - Set up proper domain names in nginx.conf
 - Enable HTTPS on ports 443
 
+

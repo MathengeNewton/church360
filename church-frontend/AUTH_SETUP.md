@@ -94,3 +94,4 @@ Default admin user (created by seed):
 3. **Protected Routes**: Prevents access to protected pages without auth
 4. **Role-Based Access**: Can restrict routes by user role
 
+

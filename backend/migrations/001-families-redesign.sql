@@ -96,3 +96,4 @@ WHERE "userType" IS NULL;
 -- LEFT JOIN family_members fm ON f.id = fm."familyId"
 -- GROUP BY f.id, f.name;
 
+

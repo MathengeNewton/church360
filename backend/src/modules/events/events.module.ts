@@ -14,3 +14,4 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 })
 export class EventsModule {}
 
+

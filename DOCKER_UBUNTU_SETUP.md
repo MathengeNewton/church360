@@ -513,3 +513,4 @@ docker compose exec db psql -U church -d church360
 
 **Note:** Replace `docker-compose` with `docker compose` (space instead of hyphen) if using the plugin version, or use `docker-compose` if using standalone version.
 
+
