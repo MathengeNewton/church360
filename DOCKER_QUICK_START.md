@@ -211,3 +211,4 @@ docker compose exec db psql -U church -d church360
 **Note:** After installation, always log out and log back in for Docker group changes to take effect!
 
 
+

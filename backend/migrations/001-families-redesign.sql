@@ -97,3 +97,4 @@ WHERE "userType" IS NULL;
 -- GROUP BY f.id, f.name;
 
 
+
